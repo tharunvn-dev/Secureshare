@@ -1,0 +1,107 @@
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: securestorage-backend
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:8450}/${DB_NAME:securestorage}}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:true}
+    baseline-version: 0
+    validate-on-migrate: false
+    locations: classpath:db/migration
+
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE_BYTES:52428800}
+      max-request-size: ${MAX_FILE_SIZE_BYTES:52428800}
+
+# Application Custom Security & Cryptographic Config
+app:
+  base-url: ${APP_BASE_URL:http://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    access-token-expiration-ms: ${JWT_EXPIRATION_MS:900000} # 15 minutes
+    refresh-token-expiration-ms: ${REFRESH_TOKEN_EXPIRATION_MS:604800000} # 7 days
+  otp:
+    expiration-minutes: ${OTP_EXPIRATION_MINUTES:5}
+    max-attempts: ${MAX_OTP_ATTEMPTS:5}
+    require-login-mfa: ${REQUIRE_LOGIN_MFA:true}
+    allow-dev-exposure: ${ALLOW_DEV_OTP_EXPOSURE:true}
+  admin:
+    bootstrap-email: ${ADMIN_EMAIL:admin@example.com}
+    bootstrap-display-name: ${ADMIN_DISPLAY_NAME:System Administrator}
+    bootstrap-password: ${ADMIN_INITIAL_PASSWORD:admin@12345678}
+  storage:
+    provider: ${STORAGE_PROVIDER:local}
+    local-directory: ${STORAGE_LOCAL_DIR:./storage}
+    max-file-size: ${MAX_FILE_SIZE_BYTES:52428800}
+    chunk-size: ${CHUNK_SIZE_BYTES:1048576}
+  mail:
+    from: ${MAIL_FROM:no-reply@securestorage.local}
+  oauth:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:unconfigured-client-id}
+      client-secret: ${GOOGLE_CLIENT_SECRET:unconfigured-client-secret}
+
+# Actuator Endpoints Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+      roles: ADMIN
+  health:
+    mail:
+      enabled: false
+
+# OpenAPI / Swagger
+springdoc:
+  api-docs:
+    path: /api/v3/api-docs
+  swagger-ui:
+    path: /api/swagger-ui.html
+    operationsSorter: method

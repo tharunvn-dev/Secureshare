@@ -1,0 +1,54 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment and Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+
+# Local Encrypted Storage & uploads
+/storage/*
+!/storage/.gitkeep
+/backend/storage/*
+!/backend/storage/.gitkeep
+/temp/*
+/uploads/*
+
+# Java & Spring Boot Maven
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/*.log
+backend/logs/
+
+# Frontend Node & Vite
+web/node_modules/
+web/dist/
+web/dist-ssr/
+web/*.local
+web/coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE & Editor Configs
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.classpath
+.project
+.settings/
+
+# Test Results & Scratch
+test-results/
+scratch/
