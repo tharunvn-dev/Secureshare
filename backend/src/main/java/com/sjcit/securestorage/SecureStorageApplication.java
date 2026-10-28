@@ -65,5 +65,23 @@ public class SecureStorageApplication {
                 break;
             }
         }
+
+        // Auto-normalize cloud database URL (Render, Railway, Supabase format)
+        String dbUrl = System.getProperty("SPRING_DATASOURCE_URL");
+        if (dbUrl == null || dbUrl.isBlank()) {
+            dbUrl = System.getenv("SPRING_DATASOURCE_URL");
+        }
+        if (dbUrl == null || dbUrl.isBlank()) {
+            dbUrl = System.getenv("DATABASE_URL");
+        }
+        if (dbUrl != null && !dbUrl.isBlank()) {
+            if (dbUrl.startsWith("postgres://")) {
+                dbUrl = "jdbc:postgresql://" + dbUrl.substring("postgres://".length());
+            } else if (dbUrl.startsWith("postgresql://") && !dbUrl.startsWith("jdbc:")) {
+                dbUrl = "jdbc:" + dbUrl;
+            }
+            System.setProperty("SPRING_DATASOURCE_URL", dbUrl);
+            System.setProperty("DB_URL", dbUrl);
+        }
     }
 }
