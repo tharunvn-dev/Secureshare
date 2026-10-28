@@ -106,45 +106,49 @@ public class SecureStorageApplication {
                     }
 
                     if (cleanUrl.startsWith("postgres://") || cleanUrl.startsWith("postgresql://")) {
-                        String pseudoHttp = cleanUrl.replaceFirst("^(postgres|postgresql)://", "http://");
-                        URI uri = new URI(pseudoHttp);
-                        String userInfo = uri.getUserInfo();
+                        int slashSlash = cleanUrl.indexOf("://");
+                        int atIndex = cleanUrl.lastIndexOf('@');
+
+                        String userInfo = null;
+                        String hostAndPath = cleanUrl;
+
+                        if (atIndex > slashSlash && slashSlash >= 0) {
+                            userInfo = cleanUrl.substring(slashSlash + 3, atIndex);
+                            hostAndPath = cleanUrl.substring(atIndex + 1);
+                        } else if (cleanUrl.startsWith("postgres://")) {
+                            hostAndPath = cleanUrl.substring("postgres://".length());
+                        } else if (cleanUrl.startsWith("postgresql://")) {
+                            hostAndPath = cleanUrl.substring("postgresql://".length());
+                        }
+
                         if (userInfo != null && userInfo.contains(":")) {
-                            String[] creds = userInfo.split(":", 2);
-                            String user = URLDecoder.decode(creds[0], StandardCharsets.UTF_8);
-                            String pass = URLDecoder.decode(creds[1], StandardCharsets.UTF_8);
+                            int colon = userInfo.indexOf(':');
+                            String user = URLDecoder.decode(userInfo.substring(0, colon), StandardCharsets.UTF_8);
+                            String pass = URLDecoder.decode(userInfo.substring(colon + 1), StandardCharsets.UTF_8);
                             overrides.put("spring.datasource.username", user);
                             overrides.put("spring.datasource.password", pass);
-                            overrides.put("spring.flyway.user", user);
-                            overrides.put("spring.flyway.password", pass);
-                            log.info("DatabaseUrlNormalizer: Extracted cloud DB user '{}'", user);
+                            System.setProperty("SPRING_DATASOURCE_USERNAME", user);
+                            System.setProperty("SPRING_DATASOURCE_PASSWORD", pass);
+                            log.info("DatabaseUrlNormalizer: Extracted cloud database username '{}'", user);
                         }
 
-                        String host = uri.getHost();
-                        int port = uri.getPort() > 0 ? uri.getPort() : 5432;
-                        String path = uri.getPath();
-                        String query = uri.getQuery();
-
-                        StringBuilder jdbc = new StringBuilder("jdbc:postgresql://")
-                                .append(host)
-                                .append(":")
-                                .append(port)
-                                .append(path);
-
-                        if (query != null && !query.isBlank()) {
-                            jdbc.append("?").append(query);
+                        String finalJdbcUrl = "jdbc:postgresql://" + hostAndPath;
+                        if (!finalJdbcUrl.equals(rawDbUrl)) {
+                            overrides.put("spring.datasource.url", finalJdbcUrl);
+                            overrides.put("DB_URL", finalJdbcUrl);
+                            overrides.put("SPRING_DATASOURCE_URL", finalJdbcUrl);
+                            System.setProperty("SPRING_DATASOURCE_URL", finalJdbcUrl);
+                            System.setProperty("DB_URL", finalJdbcUrl);
+                            log.info("DatabaseUrlNormalizer: Formatted JDBC connection URL: {}", finalJdbcUrl);
                         }
-
-                        String finalJdbcUrl = jdbc.toString();
+                    } else if (!rawDbUrl.startsWith("jdbc:")) {
+                        String finalJdbcUrl = "jdbc:" + rawDbUrl;
                         overrides.put("spring.datasource.url", finalJdbcUrl);
-                        overrides.put("spring.flyway.url", finalJdbcUrl);
                         overrides.put("DB_URL", finalJdbcUrl);
                         overrides.put("SPRING_DATASOURCE_URL", finalJdbcUrl);
-                        log.info("DatabaseUrlNormalizer: Formatted JDBC connection URL: {}", finalJdbcUrl);
-                    } else if (!cleanUrl.startsWith("jdbc:")) {
-                        String finalJdbcUrl = "jdbc:" + cleanUrl;
-                        overrides.put("spring.datasource.url", finalJdbcUrl);
-                        overrides.put("spring.flyway.url", finalJdbcUrl);
+                        System.setProperty("SPRING_DATASOURCE_URL", finalJdbcUrl);
+                        System.setProperty("DB_URL", finalJdbcUrl);
+                        log.info("DatabaseUrlNormalizer: Prepended 'jdbc:' to connection URL: {}", finalJdbcUrl);
                     }
                 } catch (Exception e) {
                     log.warn("DatabaseUrlNormalizer: Failed to parse URL '{}': {}", rawDbUrl, e.getMessage());
