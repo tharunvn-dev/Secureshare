@@ -64,7 +64,7 @@ spring:
 
 # Application Custom Security & Cryptographic Config
 app:
-  base-url: ${APP_BASE_URL:http://localhost:5173}
+  base-url: ${APP_BASE_URL:https://secureshare-blond.vercel.app}
   jwt:
     secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
     access-token-expiration-ms: ${JWT_EXPIRATION_MS:900000} # 15 minutes

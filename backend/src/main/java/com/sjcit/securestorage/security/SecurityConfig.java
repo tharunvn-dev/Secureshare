@@ -82,6 +82,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(Arrays.asList(
             frontendUrl,
+            "https://secureshare-blond.vercel.app",
             "https://*.vercel.app",
             "http://localhost:*",
             "http://127.0.0.1:*"
