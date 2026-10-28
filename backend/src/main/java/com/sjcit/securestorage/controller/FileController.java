@@ -40,9 +40,11 @@ public class FileController {
     public ResponseEntity<FileUploadResponse> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "carrier", required = false) MultipartFile carrier,
+            @RequestParam(value = "carrierImage", required = false) MultipartFile carrierImage,
             @AuthenticationPrincipal User user,
             HttpServletRequest request) {
-        FileUploadResponse response = fileService.uploadFile(file, carrier, user, request);
+        MultipartFile activeCarrier = (carrier != null && !carrier.isEmpty()) ? carrier : carrierImage;
+        FileUploadResponse response = fileService.uploadFile(file, activeCarrier, user, request);
         return ResponseEntity.ok(response);
     }
 

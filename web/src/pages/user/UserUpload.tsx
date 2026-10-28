@@ -67,6 +67,7 @@ export const UserUpload: React.FC = () => {
       const formData = new FormData();
       formData.append('file', selectedFile);
       if (selectedCarrier && useSteganography) {
+        formData.append('carrier', selectedCarrier);
         formData.append('carrierImage', selectedCarrier);
       }
 

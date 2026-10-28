@@ -47,11 +47,17 @@ public class AuthController {
     @PostMapping("/resend-otp")
     @Operation(summary = "Resend a fresh OTP verification code")
     public ResponseEntity<Void> resendOtp(
-            @RequestParam String email,
-            @RequestParam(defaultValue = "LOGIN_MFA") String purpose) {
-        authService.resendOtp(email, purpose);
+            @RequestBody(required = false) Map<String, String> body,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false, defaultValue = "LOGIN_MFA") String purpose) {
+        String targetEmail = (body != null && body.containsKey("email")) ? body.get("email") : email;
+        String targetPurpose = (body != null && body.containsKey("purpose")) ? body.get("purpose") : purpose;
+        if (targetEmail != null && !targetEmail.isBlank()) {
+            authService.resendOtp(targetEmail, targetPurpose);
+        }
         return ResponseEntity.ok().build();
     }
+
 
     @PostMapping("/login")
     @Operation(summary = "Primary password authentication (dispatches OTP if MFA is active)")

@@ -52,7 +52,11 @@ public class EmailDeliveryService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(mailFrom);
+            try {
+                helper.setFrom(mailFrom, "SecureShare Verification");
+            } catch (Exception ignored) {
+                helper.setFrom(mailFrom);
+            }
             helper.setTo(outbox.getRecipient());
             helper.setSubject(outbox.getSubject());
 

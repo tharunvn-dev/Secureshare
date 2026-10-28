@@ -293,9 +293,19 @@ export const LoginPage: React.FC = () => {
               )}
 
               {error && (
-                <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{error}</span>
+                <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                  {error.toLowerCase().includes('verification') && (
+                    <Link
+                      to={`/verify-email?email=${encodeURIComponent(email.trim())}`}
+                      className="mt-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#10b981] hover:bg-[#34d399] text-slate-950 font-bold rounded text-xs transition shadow-md"
+                    >
+                      Enter 6-Digit Email Verification Code &rarr;
+                    </Link>
+                  )}
                 </div>
               )}
 
@@ -305,8 +315,8 @@ export const LoginPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      setEmail('tarunvnias@gmail.com');
-                      setPassword('admin@12345678');
+                      setEmail('tharunsanatani@gmail.com');
+                      setPassword('Password@123');
                     }}
                     className="text-[11px] text-emerald-400 hover:underline font-mono"
                   >
@@ -314,7 +324,7 @@ export const LoginPage: React.FC = () => {
                   </button>
                 </div>
                 <div className="font-mono text-[11px] text-slate-400">
-                  User: <span className="text-white">tarunvnias@gmail.com</span> | Pass: <span className="text-white">admin@12345678</span>
+                  User: <span className="text-white">tharunsanatani@gmail.com</span> | Pass: <span className="text-white">Password@123</span>
                 </div>
               </div>
 
