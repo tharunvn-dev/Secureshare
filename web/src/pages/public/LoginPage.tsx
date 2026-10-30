@@ -11,6 +11,8 @@ declare global {
   }
 }
 
+const GOOGLE_CLIENT_ID = '944327300600-20j1lb4c6h4nud00u1o123r9mvmmeesj.apps.googleusercontent.com';
+
 export const LoginPage: React.FC = () => {
   const { login, verifyMfa, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -35,14 +37,6 @@ export const LoginPage: React.FC = () => {
   // Screen 6: Google Sign-In Modal State
   const [googleModalOpen, setGoogleModalOpen] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleClientId, setGoogleClientId] = useState<string>(
-    () => localStorage.getItem('google_client_id') || (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || ''
-  );
-  const [clientIdInput, setClientIdInput] = useState(googleClientId);
-  const [showConfig, setShowConfig] = useState<boolean>(() => {
-    const cid = localStorage.getItem('google_client_id') || (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || '';
-    return !cid.trim();
-  });
   const googleBtnContainerRef = useRef<HTMLDivElement>(null);
 
   const isVerified = searchParams.get('verified') === 'true';
@@ -157,11 +151,10 @@ export const LoginPage: React.FC = () => {
 
   useEffect(() => {
     if (!googleModalOpen) return;
-    const cid = googleClientId.trim();
-    if (cid && typeof window !== 'undefined' && window.google?.accounts?.id) {
+    if (typeof window !== 'undefined' && window.google?.accounts?.id) {
       try {
         window.google.accounts.id.initialize({
-          client_id: cid,
+          client_id: GOOGLE_CLIENT_ID,
           callback: (res: any) => {
             if (res?.credential) {
               handleGoogleCredential(res.credential);
@@ -184,14 +177,7 @@ export const LoginPage: React.FC = () => {
         console.error('Failed to init Google Sign-In:', err);
       }
     }
-  }, [googleModalOpen, googleClientId]);
-
-  const handleSaveClientId = () => {
-    const trimmed = clientIdInput.trim();
-    setGoogleClientId(trimmed);
-    localStorage.setItem('google_client_id', trimmed);
-    setShowConfig(false);
-  };
+  }, [googleModalOpen]);
 
   return (
     <div className="min-h-screen bg-[#060b14] flex flex-col font-sans selection:bg-[#10b981]/30 selection:text-[#34d399]">
@@ -482,25 +468,10 @@ export const LoginPage: React.FC = () => {
               <div ref={googleBtnContainerRef} className="min-h-[44px] flex items-center justify-center" />
             </div>
 
-            {!googleClientId && (
-              <div className="mt-4 p-3 rounded-lg bg-[#070e1c] border border-[#1a2744] text-left text-xs">
-                <label className="text-[11px] text-slate-400 block mb-1">
-                  Google OAuth Web Client ID:
-                </label>
-                <input
-                  type="text"
-                  placeholder="xxxx.apps.googleusercontent.com"
-                  value={clientIdInput}
-                  onChange={(e) => setClientIdInput(e.target.value)}
-                  className="sec-input text-xs py-1.5 mb-2 font-mono"
-                />
-                <button
-                  type="button"
-                  onClick={handleSaveClientId}
-                  className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded text-xs"
-                >
-                  Save & Continue
-                </button>
+            {googleLoading && (
+              <div className="flex items-center justify-center gap-2 text-xs text-emerald-400 mt-2">
+                <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                <span>Authenticating with Google...</span>
               </div>
             )}
           </div>

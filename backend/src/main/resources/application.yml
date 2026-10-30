@@ -90,7 +90,7 @@ app:
     resend-from: ${RESEND_FROM:SecureShare <onboarding@resend.dev>}
   oauth:
     google:
-      client-id: ${GOOGLE_CLIENT_ID:unconfigured-client-id}
+      client-id: ${GOOGLE_CLIENT_ID:944327300600-20j1lb4c6h4nud00u1o123r9mvmmeesj.apps.googleusercontent.com}
       client-secret: ${GOOGLE_CLIENT_SECRET:unconfigured-client-secret}
 
 # Actuator Endpoints Configuration
