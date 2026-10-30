@@ -7,8 +7,8 @@ import { TopFeatureBar } from '../../components/common/TopFeatureBar';
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [email, setEmail] = useState('admin@gmail.com');
-  const [password, setPassword] = useState('admin@12345678');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,12 +121,6 @@ export const AdminLoginPage: React.FC = () => {
                 <span>{error}</span>
               </div>
             )}
-
-            <div className="mb-4 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex flex-col gap-1">
-              <span className="font-semibold text-emerald-300">Administrator Credentials:</span>
-              <span className="font-mono text-[11px] text-slate-300">Email: <span className="text-white">admin@gmail.com</span> (or admin@example.com)</span>
-              <span className="font-mono text-[11px] text-slate-300">Password: <span className="text-white">admin@12345678</span></span>
-            </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

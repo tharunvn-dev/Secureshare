@@ -116,15 +116,6 @@ export const VerifyEmailPage: React.FC = () => {
             <strong className="text-white font-mono">{emailParam}</strong>
           </p>
 
-          <div
-            onClick={() => {
-              setDigits(['1', '2', '3', '4', '5', '6']);
-            }}
-            className="mt-3 p-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs cursor-pointer hover:bg-emerald-500/25 transition-all text-center"
-          >
-            <span>Testing locally? <strong className="font-mono text-white underline ml-1">Click to autofill OTP (123456)</strong></span>
-          </div>
-
           {error && (
             <div className="mt-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2 text-left">
               <AlertCircle className="w-4 h-4 shrink-0" />
