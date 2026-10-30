@@ -15,42 +15,6 @@ export const MyShares: React.FC = () => {
   const [revokeShareId, setRevokeShareId] = useState<string | null>(null);
   const [revokeLinkId, setRevokeLinkId] = useState<string | null>(null);
 
-  // Fallback demo items matching Screen 14 exactly
-  const sampleShares = [
-    {
-      id: 'share-1',
-      originalFilename: 'Project_Report.pdf',
-      recipientEmail: 'user2@example.com',
-      expiryDate: '19 May 2025',
-      status: 'Active',
-      createdAt: '2025-05-12T10:00:00Z',
-    },
-    {
-      id: 'share-2',
-      originalFilename: 'Dataset.zip',
-      recipientEmail: 'user3@example.com',
-      expiryDate: '16 May 2025',
-      status: 'Active',
-      createdAt: '2025-05-10T11:30:00Z',
-    },
-    {
-      id: 'share-3',
-      originalFilename: 'Notes.docx',
-      recipientEmail: 'user4@example.com',
-      expiryDate: '12 May 2025',
-      status: 'Expired',
-      createdAt: '2025-05-08T09:15:00Z',
-    },
-    {
-      id: 'share-4',
-      originalFilename: 'Thesis.pdf',
-      recipientEmail: 'user5@example.com',
-      expiryDate: '10 May 2025',
-      status: 'Revoked',
-      createdAt: '2025-05-05T14:45:00Z',
-    },
-  ];
-
   const fetchData = () => {
     setLoading(true);
     setError(null);
@@ -110,8 +74,6 @@ export const MyShares: React.FC = () => {
     }
   };
 
-  const displayShares = userShares.length > 0 ? userShares : sampleShares;
-
   return (
     <div className="space-y-6">
       {/* Screen 14 Card: Files Shared By Me */}
@@ -135,7 +97,7 @@ export const MyShares: React.FC = () => {
               }`}
             >
               <Share2 className="w-3.5 h-3.5" />
-              Direct Shares ({displayShares.length})
+              Direct Shares ({userShares.length})
             </button>
             <button
               onClick={() => setActiveTab('LINKS')}
@@ -151,84 +113,97 @@ export const MyShares: React.FC = () => {
           </div>
         </div>
 
-        {/* Tab 1: Direct Shares matching Screen 14 */}
+        {/* Tab 1: Direct Shares */}
         {activeTab === 'DIRECT' ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-emerald-950/40 text-slate-400 font-mono text-[11px] uppercase tracking-wider">
-                  <th className="py-3 px-4">Name</th>
-                  <th className="py-3 px-4">Shared With</th>
-                  <th className="py-3 px-4">Expires On</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-emerald-950/30">
-                {displayShares.map((item: any) => {
-                  const isRevoked = item.status?.toUpperCase() === 'REVOKED';
-                  const isExpired = item.status?.toUpperCase() === 'EXPIRED';
-                  const isActive = !isRevoked && !isExpired;
+          loading && userShares.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-slate-400 text-xs gap-3">
+              <Share2 className="w-8 h-8 text-emerald-400 animate-spin" />
+              <span>Loading shares...</span>
+            </div>
+          ) : userShares.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-slate-400 text-xs gap-2">
+              <Share2 className="w-8 h-8 text-slate-600 mb-1" />
+              <span className="text-slate-300 font-medium">No files shared yet.</span>
+              <span className="text-slate-500 text-[11px]">When you share encrypted files with other users, they will appear here.</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-emerald-950/40 text-slate-400 font-mono text-[11px] uppercase tracking-wider">
+                    <th className="py-3 px-4">Name</th>
+                    <th className="py-3 px-4">Shared With</th>
+                    <th className="py-3 px-4">Expires On</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-emerald-950/30">
+                  {userShares.map((item: any) => {
+                    const isRevoked = item.status?.toUpperCase() === 'REVOKED';
+                    const isExpired = item.status?.toUpperCase() === 'EXPIRED';
+                    const isActive = !isRevoked && !isExpired;
 
-                  return (
-                    <tr key={item.id} className="hover:bg-emerald-500/5 transition-colors group">
-                      <td className="py-3.5 px-4 font-medium text-white flex items-center gap-2.5">
-                        <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <span className="font-mono text-emerald-300 group-hover:text-emerald-200">
-                          {item.originalFilename}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-300 font-mono text-xs">
-                        {item.recipientEmail || 'user2@example.com'}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-400 font-mono">
-                        {item.expiryDate || '19 May 2025'}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {isActive && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 inline-flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                            Active
+                    return (
+                      <tr key={item.id} className="hover:bg-emerald-500/5 transition-colors group">
+                        <td className="py-3.5 px-4 font-medium text-white flex items-center gap-2.5">
+                          <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
+                          <span className="font-mono text-emerald-300 group-hover:text-emerald-200">
+                            {item.originalFilename}
                           </span>
-                        )}
-                        {isExpired && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/30 inline-flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                            Expired
-                          </span>
-                        )}
-                        {isRevoked && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/15 text-rose-400 border border-rose-500/30 inline-flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                            Revoked
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-300 font-mono text-xs">
+                          {item.recipientEmail || 'N/A'}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-400 font-mono">
+                          {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'No expiry'}
+                        </td>
+                        <td className="py-3.5 px-4">
                           {isActive && (
-                            <button
-                              onClick={() => setRevokeShareId(item.id)}
-                              className="px-2.5 py-1 text-[11px] bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg transition-colors flex items-center gap-1"
-                              title="Revoke access"
-                            >
-                              <Ban className="w-3 h-3" /> Revoke
-                            </button>
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 inline-flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                              Active
+                            </span>
                           )}
-                          <button
-                            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-                            title="More options"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                          {isExpired && (
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/30 inline-flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              Expired
+                            </span>
+                          )}
+                          {isRevoked && (
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/15 text-rose-400 border border-rose-500/30 inline-flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                              Revoked
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {isActive && (
+                              <button
+                                onClick={() => setRevokeShareId(item.id)}
+                                className="px-2.5 py-1 text-[11px] bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg transition-colors flex items-center gap-1"
+                                title="Revoke access"
+                              >
+                                <Ban className="w-3 h-3" /> Revoke
+                              </button>
+                            )}
+                            <button
+                              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                              title="More options"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
         ) : (
           /* Tab 2: Shared Token Links */
           <div className="overflow-x-auto">

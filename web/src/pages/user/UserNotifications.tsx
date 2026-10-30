@@ -8,46 +8,6 @@ export const UserNotifications: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Exact sample notifications from Screen 15
-  const sampleNotifications = [
-    {
-      id: 'notif-1',
-      title: 'New file shared with you',
-      message: 'Alice shared Project_Report.pdf with you.',
-      timeAgo: '2 hours ago',
-      type: 'SHARES',
-      readStatus: false,
-      iconType: 'share',
-    },
-    {
-      id: 'notif-2',
-      title: 'Your shared file was downloaded',
-      message: 'user2@example.com downloaded your file.',
-      timeAgo: '1 day ago',
-      type: 'SHARES',
-      readStatus: true,
-      iconType: 'download',
-    },
-    {
-      id: 'notif-3',
-      title: 'Share link expired',
-      message: 'Your share link for Dataset.zip has expired.',
-      timeAgo: '2 days ago',
-      type: 'SYSTEM',
-      readStatus: true,
-      iconType: 'expired',
-    },
-    {
-      id: 'notif-4',
-      title: 'Login from new device',
-      message: 'A new login was detected from Windows.',
-      timeAgo: '3 days ago',
-      type: 'SECURITY',
-      readStatus: true,
-      iconType: 'security',
-    },
-  ];
-
   useEffect(() => {
     setLoading(true);
     api
@@ -57,24 +17,22 @@ export const UserNotifications: React.FC = () => {
         setNotifications(list);
       })
       .catch((err) => {
-        console.warn('Backend notifications endpoint notice, falling back to presentation items:', err);
+        console.warn('Backend notifications endpoint error:', err);
       })
       .finally(() => {
         setLoading(false);
       });
   }, []);
 
-  const displayList = notifications.length > 0
-    ? notifications.map((n, i) => ({
-        id: n.id,
-        title: n.title,
-        message: n.message,
-        timeAgo: new Date(n.createdAt).toLocaleDateString(),
-        type: n.type?.toUpperCase() || 'SYSTEM',
-        readStatus: n.readStatus,
-        iconType: n.type?.toLowerCase() || 'share',
-      }))
-    : sampleNotifications;
+  const displayList = notifications.map((n) => ({
+    id: n.id,
+    title: n.title,
+    message: n.message,
+    timeAgo: new Date(n.createdAt).toLocaleDateString(),
+    type: n.type?.toUpperCase() || 'SYSTEM',
+    readStatus: n.readStatus,
+    iconType: n.type?.toLowerCase() || 'share',
+  }));
 
   const filtered = displayList.filter((item) => {
     if (activeTab === 'UNREAD') return !item.readStatus;

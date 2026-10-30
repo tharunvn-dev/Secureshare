@@ -9,34 +9,6 @@ export const AdminNotifications: React.FC = () => {
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [broadcastSent, setBroadcastSent] = useState(false);
 
-  // Exact sample alerts for Screen 22
-  const sampleAdminAlerts = [
-    {
-      id: 'alert-1',
-      title: 'Automated Integrity Scan Finished',
-      message: 'All 540 files verified against SHA-256 HMAC digest in PostgreSQL with 0 integrity anomalies detected.',
-      timeAgo: '10 mins ago',
-      type: 'SECURITY',
-      readStatus: false,
-    },
-    {
-      id: 'alert-2',
-      title: 'High Ingestion Rate Threshold',
-      message: 'Storage subsystem recorded 450 MB upload chunk (Dataset.zip) by user Bob Green.',
-      timeAgo: '1 hour ago',
-      type: 'SYSTEM',
-      readStatus: true,
-    },
-    {
-      id: 'alert-3',
-      title: 'Multiple Login Failures Recorded',
-      message: '5 failed login attempts for user4@example.com from IP 192.168.1.104. Account temporarily locked.',
-      timeAgo: '3 hours ago',
-      type: 'SECURITY',
-      readStatus: true,
-    },
-  ];
-
   useEffect(() => {
     setLoading(true);
     api
@@ -46,21 +18,21 @@ export const AdminNotifications: React.FC = () => {
         setNotifications(list);
       })
       .catch((err) => {
-        console.warn('Admin notifications notice, using presentation list:', err);
+        console.warn('Admin notifications notice error:', err);
       })
       .finally(() => {
         setLoading(false);
       });
   }, []);
 
-  const displayList = notifications.length > 0 ? notifications.map(n => ({
+  const displayList = notifications.map(n => ({
     id: n.id,
     title: n.title,
     message: n.message,
     timeAgo: new Date(n.createdAt).toLocaleDateString(),
     type: n.type || 'SYSTEM',
     readStatus: n.readStatus,
-  })) : sampleAdminAlerts;
+  }));
 
   const handleBroadcast = (e: React.FormEvent) => {
     e.preventDefault();
