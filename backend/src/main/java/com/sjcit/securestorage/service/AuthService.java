@@ -98,8 +98,12 @@ public class AuthService {
         if (request.getPublicKeyEcc() != null && !request.getPublicKeyEcc().isBlank()) {
             user.setPublicKeyEcc(request.getPublicKeyEcc());
         } else {
-            KeyPair keyPair = eccKeyService.generateKeyPair();
-            user.setPublicKeyEcc(eccKeyService.encodePublicKey(keyPair.getPublic()));
+            if (request.getPublicKeyEcc() != null && !request.getPublicKeyEcc().isBlank()) {
+                user.setPublicKeyEcc(request.getPublicKeyEcc().trim());
+            } else {
+                KeyPair keyPair = eccKeyService.generateKeyPair();
+                user.setPublicKeyEcc(eccKeyService.encodePublicKey(keyPair.getPublic()));
+            }
         }
 
         user = userRepository.save(user);
@@ -218,8 +222,12 @@ public class AuthService {
                     .orElseThrow(() -> new RuntimeException("Default USER role missing from database."));
             user.setRoles(new HashSet<>(Collections.singletonList(userRole)));
 
-            KeyPair keyPair = eccKeyService.generateKeyPair();
-            user.setPublicKeyEcc(eccKeyService.encodePublicKey(keyPair.getPublic()));
+            if (request.getPublicKeyEcc() != null && !request.getPublicKeyEcc().isBlank()) {
+                user.setPublicKeyEcc(request.getPublicKeyEcc().trim());
+            } else {
+                KeyPair keyPair = eccKeyService.generateKeyPair();
+                user.setPublicKeyEcc(eccKeyService.encodePublicKey(keyPair.getPublic()));
+            }
 
             user = userRepository.save(user);
             auditLogService.logEvent(user, "GOOGLE_REGISTER_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "Account registered via Google OpenID Connect", httpRequest);

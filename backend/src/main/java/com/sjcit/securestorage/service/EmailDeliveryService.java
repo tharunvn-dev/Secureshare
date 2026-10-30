@@ -1,5 +1,7 @@
 package com.sjcit.securestorage.service;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.sjcit.securestorage.entity.EmailOutbox;
 import com.sjcit.securestorage.repository.EmailOutboxRepository;
 import jakarta.mail.internet.MimeMessage;
@@ -12,6 +14,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.Instant;
 
 @Service
@@ -21,19 +28,32 @@ public class EmailDeliveryService {
 
     private final JavaMailSender mailSender;
     private final EmailOutboxRepository outboxRepository;
+    private final HttpClient httpClient;
 
     @Value("${app.mail.from:no-reply@securestorage.local}")
     private String mailFrom;
 
+    @Value("${app.mail.brevo-api-key:}")
+    private String brevoApiKey;
+
+    @Value("${app.mail.resend-api-key:}")
+    private String resendApiKey;
+
+    @Value("${app.mail.resend-from:SecureShare <onboarding@resend.dev>}")
+    private String resendFrom;
+
     public EmailDeliveryService(JavaMailSender mailSender, EmailOutboxRepository outboxRepository) {
         this.mailSender = mailSender;
         this.outboxRepository = outboxRepository;
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
     }
 
     @Transactional
     public EmailOutbox queueEmail(String recipient, String subject, String bodyText, String bodyHtml) {
         EmailOutbox outbox = new EmailOutbox(recipient, subject, bodyText, bodyHtml);
-        outbox = outboxRepository.save(outbox);
+        outbox = outboxRepository.saveAndFlush(outbox);
         sendOutboxEmail(outbox.getId());
         return outbox;
     }
@@ -49,37 +69,127 @@ public class EmailDeliveryService {
         outbox.setAttemptCount(outbox.getAttemptCount() + 1);
 
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            try {
-                helper.setFrom(mailFrom, "SecureShare Verification");
-            } catch (Exception ignored) {
-                helper.setFrom(mailFrom);
-            }
-            helper.setTo(outbox.getRecipient());
-            helper.setSubject(outbox.getSubject());
-
-            if (outbox.getBodyHtml() != null && !outbox.getBodyHtml().isBlank()) {
-                helper.setText(outbox.getBodyText(), outbox.getBodyHtml());
+            // Prioritize HTTPS REST APIs over port 443 (Render never blocks port 443)
+            if (brevoApiKey != null && !brevoApiKey.isBlank()) {
+                sendViaBrevo(outbox.getRecipient(), outbox.getSubject(), outbox.getBodyText(), outbox.getBodyHtml());
+            } else if (resendApiKey != null && !resendApiKey.isBlank()) {
+                sendViaResend(outbox.getRecipient(), outbox.getSubject(), outbox.getBodyText(), outbox.getBodyHtml());
             } else {
-                helper.setText(outbox.getBodyText(), false);
+                sendViaSmtp(outbox);
             }
-
-            mailSender.send(message);
 
             outbox.setStatus("SENT");
             outbox.setSentAt(Instant.now());
             outbox.setLastError(null);
             outboxRepository.save(outbox);
 
-            log.info("Email delivered to {} via configured SMTP. Subject: {}", outbox.getRecipient(), outbox.getSubject());
+            log.info("Email delivered to {} successfully. Subject: {}", outbox.getRecipient(), outbox.getSubject());
         } catch (Exception e) {
-            log.warn("SMTP email delivery to {} failed (attempt {}): {}", outbox.getRecipient(), outbox.getAttemptCount(), e.getMessage());
+            String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            log.warn("Email delivery to {} failed (attempt {}): {}", outbox.getRecipient(), outbox.getAttemptCount(), errorMsg);
+            if (errorMsg.contains("timed out") || errorMsg.contains("ConnectException") || errorMsg.contains("587")) {
+                log.warn("NOTE: Cloud hosts like Render Free Tier block outbound SMTP ports 587/465. To send real emails over HTTPS port 443, configure BREVO_API_KEY or RESEND_API_KEY in environment variables.");
+            }
             outbox.setStatus("FAILED");
-            outbox.setLastError(e.getMessage());
+            outbox.setLastError(errorMsg);
             outboxRepository.save(outbox);
         }
+    }
+
+    private void sendViaBrevo(String recipient, String subject, String bodyText, String bodyHtml) {
+        try {
+            JsonObject sender = new JsonObject();
+            sender.addProperty("name", "SecureShare Verification");
+            String senderEmail = (mailFrom != null && mailFrom.contains("@") && !mailFrom.contains("local"))
+                    ? mailFrom : "tharunsanatani@gmail.com";
+            sender.addProperty("email", senderEmail);
+
+            JsonArray to = new JsonArray();
+            JsonObject toRecipient = new JsonObject();
+            toRecipient.addProperty("email", recipient);
+            to.add(toRecipient);
+
+            JsonObject payload = new JsonObject();
+            payload.add("sender", sender);
+            payload.add("to", to);
+            payload.addProperty("subject", subject);
+            if (bodyHtml != null && !bodyHtml.isBlank()) {
+                payload.addProperty("htmlContent", bodyHtml);
+            }
+            if (bodyText != null && !bodyText.isBlank()) {
+                payload.addProperty("textContent", bodyText);
+            }
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                    .header("Content-Type", "application/json")
+                    .header("api-key", brevoApiKey.trim())
+                    .timeout(Duration.ofSeconds(10))
+                    .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                throw new RuntimeException("Brevo API error (" + response.statusCode() + "): " + response.body());
+            }
+            log.info("Delivered email via Brevo HTTPS API to {}", recipient);
+        } catch (Exception e) {
+            throw new RuntimeException("Brevo delivery failed: " + e.getMessage(), e);
+        }
+    }
+
+    private void sendViaResend(String recipient, String subject, String bodyText, String bodyHtml) {
+        try {
+            JsonObject payload = new JsonObject();
+            payload.addProperty("from", resendFrom);
+            JsonArray to = new JsonArray();
+            to.add(recipient);
+            payload.add("to", to);
+            payload.addProperty("subject", subject);
+            if (bodyHtml != null && !bodyHtml.isBlank()) {
+                payload.addProperty("html", bodyHtml);
+            }
+            if (bodyText != null && !bodyText.isBlank()) {
+                payload.addProperty("text", bodyText);
+            }
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.resend.com/emails"))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + resendApiKey.trim())
+                    .timeout(Duration.ofSeconds(10))
+                    .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                throw new RuntimeException("Resend API error (" + response.statusCode() + "): " + response.body());
+            }
+            log.info("Delivered email via Resend HTTPS API to {}", recipient);
+        } catch (Exception e) {
+            throw new RuntimeException("Resend delivery failed: " + e.getMessage(), e);
+        }
+    }
+
+    private void sendViaSmtp(EmailOutbox outbox) throws Exception {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        try {
+            helper.setFrom(mailFrom, "SecureShare Verification");
+        } catch (Exception ignored) {
+            helper.setFrom(mailFrom);
+        }
+        helper.setTo(outbox.getRecipient());
+        helper.setSubject(outbox.getSubject());
+
+        if (outbox.getBodyHtml() != null && !outbox.getBodyHtml().isBlank()) {
+            helper.setText(outbox.getBodyText(), outbox.getBodyHtml());
+        } else {
+            helper.setText(outbox.getBodyText(), false);
+        }
+
+        mailSender.send(message);
     }
 
     public void sendOtpEmail(String recipient, String otpCode, String purpose) {
@@ -155,7 +265,7 @@ public class EmailDeliveryService {
             
             %s has shared the encrypted file "%s" with you on the Secure Storage platform.
             
-            Log in to your account at http://localhost:5173 to access and decrypt the file.
+            Log in to your account at https://secureshare-blond.vercel.app to access and decrypt the file.
             
             SJCIT Secure Storage Framework
             """, senderName, fileName);
@@ -172,7 +282,7 @@ public class EmailDeliveryService {
                 </div>
                 <p style="color: #94a3b8;">To download and decrypt this file using your ECC private key, sign in to the application.</p>
                 <div style="text-align: center; margin-top: 24px;">
-                  <a href="http://localhost:5173/app/shared-with-me" style="background: #38bdf8; color: #0f172a; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Shared Files</a>
+                  <a href="https://secureshare-blond.vercel.app/app/shared-with-me" style="background: #38bdf8; color: #0f172a; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Shared Files</a>
                 </div>
               </div>
             </body>

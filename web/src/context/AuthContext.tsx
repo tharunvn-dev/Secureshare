@@ -14,6 +14,7 @@ interface AuthContextType {
   verifyMfa: (email: string, otpCode: string) => Promise<User>;
   register: (email: string, password: string, firstName?: string, lastName?: string, publicKeyEcc?: string) => Promise<User>;
   verifyEmail: (email: string, otpCode: string) => Promise<User>;
+  loginWithGoogle: (idToken: string, publicKeyEcc?: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -164,6 +165,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res.data;
   };
 
+  const loginWithGoogle = async (idToken: string, publicKeyEcc?: string): Promise<User> => {
+    const res = await api.post<LoginResponse>('/auth/google', {
+      idToken,
+      publicKeyEcc,
+    });
+    if (res.data.accessToken && res.data.user) {
+      setToken(res.data.accessToken);
+      setUser(res.data.user);
+      localStorage.setItem('token', res.data.accessToken);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      return res.data.user;
+    }
+    throw new Error('Google authentication failed');
+  };
+
   const logout = async () => {
     try {
       await api.post('/auth/logout');
@@ -195,6 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         verifyMfa,
         register,
         verifyEmail,
+        loginWithGoogle,
         logout,
         refreshUser,
       }}
