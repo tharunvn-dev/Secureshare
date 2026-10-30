@@ -45,6 +45,7 @@ public class AuthService {
     private final GoogleTokenVerifierService googleVerifierService;
     private final EccKeyManagementService eccKeyService;
     private final NotificationService notificationService;
+    private final EmailValidationService emailValidationService;
 
     @Value("${app.otp.require-login-mfa:true}")
     private boolean requireLoginMfa;
@@ -59,7 +60,8 @@ public class AuthService {
             AuditLogService auditLogService,
             GoogleTokenVerifierService googleVerifierService,
             EccKeyManagementService eccKeyService,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            EmailValidationService emailValidationService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.refreshTokenRepository = refreshTokenRepository;
@@ -70,11 +72,15 @@ public class AuthService {
         this.googleVerifierService = googleVerifierService;
         this.eccKeyService = eccKeyService;
         this.notificationService = notificationService;
+        this.emailValidationService = emailValidationService;
     }
 
     @Transactional
     public UserProfileResponse register(RegisterRequest request, HttpServletRequest httpRequest) {
         String email = request.getEmail().toLowerCase().trim();
+
+        // Validate that email is legitimate, exists, and belongs to an active domain (reject random/fake emails)
+        emailValidationService.validateEmailDeliverability(email);
 
         if (userRepository.existsByEmailIgnoreCaseAndDeletedFlagFalse(email)) {
             auditLogService.logEvent(null, "REGISTER_ATTEMPT_DUPLICATE", "USER", email, "FAILURE", "Registration attempted with existing email", httpRequest);

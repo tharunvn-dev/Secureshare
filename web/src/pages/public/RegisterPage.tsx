@@ -36,6 +36,27 @@ export const RegisterPage: React.FC = () => {
       return;
     }
 
+    const trimmedEmail = email.trim().toLowerCase();
+    const emailRegex = /^[a-zA-Z0-9_+&*-]+(?:\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setError('Please enter a valid, deliverable email address (e.g. yourname@gmail.com).');
+      return;
+    }
+
+    const domain = trimmedEmail.split('@')[1];
+    const disposableDomains = [
+      'tempmail.com', 'mailinator.com', '10minutemail.com', 'guerrillamail.com',
+      'throwawaymail.com', 'fakeinbox.com', 'yopmail.com', 'trashmail.com',
+      'getairmail.com', 'sharklasers.com', 'dispostable.com', 'maildrop.cc',
+      'crazymailing.com', 'mytemp.email', 'nada.ltd', 'temp-mail.org',
+      'fake-mail.net', 'dropmail.me', 'inboxkitten.com', 'burnermail.io',
+      'tempinbox.com', 'emailondeck.com', 'minuteinbox.com', 'generator.email'
+    ];
+    if (disposableDomains.includes(domain)) {
+      setError('Disposable or temporary email domains are not allowed. Please register with a real email address.');
+      return;
+    }
+
     setLoading(true);
 
     try {

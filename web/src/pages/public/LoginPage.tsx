@@ -39,7 +39,10 @@ export const LoginPage: React.FC = () => {
     () => localStorage.getItem('google_client_id') || (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || ''
   );
   const [clientIdInput, setClientIdInput] = useState(googleClientId);
-  const [showConfig, setShowConfig] = useState(false);
+  const [showConfig, setShowConfig] = useState<boolean>(() => {
+    const cid = localStorage.getItem('google_client_id') || (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || '';
+    return !cid.trim();
+  });
   const googleBtnContainerRef = useRef<HTMLDivElement>(null);
 
   const isVerified = searchParams.get('verified') === 'true';
@@ -164,6 +167,7 @@ export const LoginPage: React.FC = () => {
               handleGoogleCredential(res.credential);
             }
           },
+          auto_select: false,
         });
         if (googleBtnContainerRef.current) {
           googleBtnContainerRef.current.innerHTML = '';
@@ -172,9 +176,10 @@ export const LoginPage: React.FC = () => {
             size: 'large',
             shape: 'rectangular',
             text: 'continue_with',
-            width: 320,
+            width: 300,
           });
         }
+        window.google.accounts.id.prompt();
       } catch (err) {
         console.error('Failed to init Google Sign-In:', err);
       }
