@@ -473,88 +473,36 @@ export const LoginPage: React.FC = () => {
             </div>
 
             <h3 className="text-xl font-bold text-white">Continue with Google</h3>
-            <p className="text-xs text-slate-400 mt-1 mb-4">
+            <p className="text-xs text-slate-400 mt-1 mb-6">
               Sign in with your verified Google account to access SecureShare
             </p>
 
             {/* Official Google Sign-In Button Container */}
-            {googleClientId ? (
-              <div className="mb-3 flex flex-col items-center justify-center">
-                <div ref={googleBtnContainerRef} className="min-h-[44px] flex items-center justify-center" />
-                <p className="text-[10px] text-slate-500 mt-1">
-                  Using Client ID: {googleClientId.slice(0, 16)}...
-                </p>
-              </div>
-            ) : null}
-
-            {/* Toggle Client ID Configuration */}
-            <div className="mb-4">
-              <button
-                type="button"
-                onClick={() => setShowConfig(!showConfig)}
-                className="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center justify-center gap-1 mx-auto"
-              >
-                <Settings className="w-3 h-3" />
-                <span>{googleClientId ? 'Change Google Client ID' : 'Link Your Google Cloud OAuth Client ID'}</span>
-              </button>
-
-              {showConfig && (
-                <div className="mt-2.5 p-3 rounded-lg bg-[#070e1c] border border-[#1a2744] text-left text-xs">
-                  <label className="text-[11px] text-slate-400 block mb-1">
-                    Google OAuth Web Client ID:
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="xxxx.apps.googleusercontent.com"
-                    value={clientIdInput}
-                    onChange={(e) => setClientIdInput(e.target.value)}
-                    className="sec-input text-xs py-1.5 mb-2 font-mono"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={handleSaveClientId}
-                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded text-[11px]"
-                    >
-                      Save ID
-                    </button>
-                    {googleClientId && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setClientIdInput('');
-                          setGoogleClientId('');
-                          localStorage.removeItem('google_client_id');
-                        }}
-                        className="px-2 py-1 text-rose-400 hover:underline text-[11px]"
-                      >
-                        Reset
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
+            <div className="my-4 flex items-center justify-center">
+              <div ref={googleBtnContainerRef} className="min-h-[44px] flex items-center justify-center" />
             </div>
 
-            {/* 4 Trust Checkmarks matching Screen 6 */}
-            <div className="space-y-2.5 text-left text-xs text-slate-300 pt-4 border-t border-[#141f36]">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#10b981] shrink-0" />
-                <span>Uses Google OAuth 2.0</span>
+            {!googleClientId && (
+              <div className="mt-4 p-3 rounded-lg bg-[#070e1c] border border-[#1a2744] text-left text-xs">
+                <label className="text-[11px] text-slate-400 block mb-1">
+                  Google OAuth Web Client ID:
+                </label>
+                <input
+                  type="text"
+                  placeholder="xxxx.apps.googleusercontent.com"
+                  value={clientIdInput}
+                  onChange={(e) => setClientIdInput(e.target.value)}
+                  className="sec-input text-xs py-1.5 mb-2 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveClientId}
+                  className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded text-xs"
+                >
+                  Save & Continue
+                </button>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#10b981] shrink-0" />
-                <span>Only verified email access</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#10b981] shrink-0" />
-                <span>No access to your files</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#10b981] shrink-0" />
-                <span>Creates normal user account</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
