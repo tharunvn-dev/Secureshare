@@ -11,7 +11,9 @@ declare global {
   }
 }
 
-const GOOGLE_CLIENT_ID = '944327300600-20j1lb4c6h4nud00u1o123r9mvmmeesj.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  '944327300600-20jl1b4c6h4nud00u1o123r9mvrmeesj.apps.googleusercontent.com';
 
 export const LoginPage: React.FC = () => {
   const { login, verifyMfa, loginWithGoogle } = useAuth();
