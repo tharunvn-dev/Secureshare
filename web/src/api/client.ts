@@ -5,6 +5,7 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 45000,
   withCredentials: true,
 });
 
@@ -64,6 +65,9 @@ api.interceptors.response.use(
 
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      return 'The server took too long to respond. If it was sleeping, please retry now.';
+    }
     return error.response?.data?.message || error.response?.data?.error || error.message || 'An error occurred';
   }
   if (error instanceof Error) {
