@@ -72,7 +72,7 @@ app:
   otp:
     expiration-minutes: ${OTP_EXPIRATION_MINUTES:5}
     max-attempts: ${MAX_OTP_ATTEMPTS:5}
-    require-login-mfa: ${REQUIRE_LOGIN_MFA:false}
+    require-login-mfa: ${REQUIRE_LOGIN_MFA:true}
     allow-dev-exposure: ${ALLOW_DEV_OTP_EXPOSURE:true}
   admin:
     bootstrap-email: ${ADMIN_EMAIL:admin@example.com}

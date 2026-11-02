@@ -17,8 +17,17 @@ public class UserProfileResponse {
     private List<String> roles;
     private List<String> permissions;
     private Instant createdAt;
+    private String devOtp;
 
     public UserProfileResponse() {
+    }
+
+    public String getDevOtp() {
+        return devOtp;
+    }
+
+    public void setDevOtp(String devOtp) {
+        this.devOtp = devOtp;
     }
 
     public UUID getId() {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { Mail, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api, getErrorMessage } from '../../api/client';
@@ -7,10 +7,12 @@ import { TopFeatureBar } from '../../components/common/TopFeatureBar';
 
 export const VerifyEmailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { verifyEmail } = useAuth();
 
   const emailParam = searchParams.get('email') || 'yourname@example.com';
+  const devOtp = (location.state as any)?.devOtp;
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -188,7 +190,8 @@ export const VerifyEmailPage: React.FC = () => {
             <button
               type="button"
               onClick={() => {
-                setDigits(['1', '2', '3', '4', '5', '6']);
+                const code = devOtp || '123456';
+                setDigits(code.split('').slice(0, 6));
               }}
               className="text-[11px] text-[#34d399]/70 hover:text-[#34d399] transition underline decoration-dotted"
             >

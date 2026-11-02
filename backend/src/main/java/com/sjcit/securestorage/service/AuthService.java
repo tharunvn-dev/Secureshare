@@ -92,8 +92,8 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName() != null ? request.getFirstName().trim() : "");
         user.setLastName(request.getLastName() != null ? request.getLastName().trim() : "");
-        user.setStatus("ACTIVE");
-        user.setMfaEnabled(false);
+        user.setStatus("PENDING");
+        user.setMfaEnabled(true);
 
         // Assign default USER role
         Role userRole = roleRepository.findByNameIgnoreCaseAndDeletedFlagFalse("USER")
@@ -110,16 +110,19 @@ public class AuthService {
 
         user = userRepository.save(user);
 
-        // Send registration welcome / verification OTP in background
+        // Generate and send registration verification OTP
+        String rawOtp = null;
         try {
-            otpService.generateAndSendOtp(user, "REGISTRATION_VERIFICATION");
+            rawOtp = otpService.generateAndSendOtp(user, "REGISTRATION_VERIFICATION");
         } catch (Exception ex) {
             log.warn("Background OTP notification failed for {}: {}", user.getEmail(), ex.getMessage());
         }
 
-        auditLogService.logEvent(null, "REGISTER_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "New user " + email + " registered and activated", httpRequest);
+        auditLogService.logEvent(null, "REGISTER_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "New user " + email + " registered in PENDING status", httpRequest);
 
-        return mapToProfile(user);
+        UserProfileResponse response = mapToProfile(user);
+        response.setDevOtp(rawOtp);
+        return response;
     }
 
     @Transactional
@@ -189,7 +192,12 @@ public class AuthService {
         // Check if MFA is required (Admins log in directly unless explicitly enabled on user profile)
         boolean mfaNeeded = user.isMfaEnabled() || (requireLoginMfa && !user.hasRole("ADMIN"));
         if (mfaNeeded) {
-            String rawOtp = otpService.generateAndSendOtp(user, "LOGIN_MFA");
+            String rawOtp = null;
+            try {
+                rawOtp = otpService.generateAndSendOtp(user, "LOGIN_MFA");
+            } catch (Exception ex) {
+                log.warn("MFA email dispatch warning for {}: {}", user.getEmail(), ex.getMessage());
+            }
             auditLogService.logEvent(user, "LOGIN_MFA_CHALLENGE", "USER", user.getId().toString(), "SUCCESS", "Password validated, MFA challenge sent", httpRequest);
             return LoginResponse.mfaRequired(user.getEmail(), "Verification code sent to your registered email address.", rawOtp);
         }
