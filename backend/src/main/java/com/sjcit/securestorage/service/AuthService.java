@@ -92,8 +92,8 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName() != null ? request.getFirstName().trim() : "");
         user.setLastName(request.getLastName() != null ? request.getLastName().trim() : "");
-        user.setStatus("PENDING");
-        user.setMfaEnabled(true);
+        user.setStatus("ACTIVE");
+        user.setMfaEnabled(false);
 
         // Assign default USER role
         Role userRole = roleRepository.findByNameIgnoreCaseAndDeletedFlagFalse("USER")
@@ -102,22 +102,22 @@ public class AuthService {
 
         // Handle ECC public key (either supplied or generated)
         if (request.getPublicKeyEcc() != null && !request.getPublicKeyEcc().isBlank()) {
-            user.setPublicKeyEcc(request.getPublicKeyEcc());
+            user.setPublicKeyEcc(request.getPublicKeyEcc().trim());
         } else {
-            if (request.getPublicKeyEcc() != null && !request.getPublicKeyEcc().isBlank()) {
-                user.setPublicKeyEcc(request.getPublicKeyEcc().trim());
-            } else {
-                KeyPair keyPair = eccKeyService.generateKeyPair();
-                user.setPublicKeyEcc(eccKeyService.encodePublicKey(keyPair.getPublic()));
-            }
+            KeyPair keyPair = eccKeyService.generateKeyPair();
+            user.setPublicKeyEcc(eccKeyService.encodePublicKey(keyPair.getPublic()));
         }
 
         user = userRepository.save(user);
 
-        // Generate and send registration verification OTP
-        otpService.generateAndSendOtp(user, "REGISTRATION_VERIFICATION");
+        // Send registration welcome / verification OTP in background
+        try {
+            otpService.generateAndSendOtp(user, "REGISTRATION_VERIFICATION");
+        } catch (Exception ex) {
+            log.warn("Background OTP notification failed for {}: {}", user.getEmail(), ex.getMessage());
+        }
 
-        auditLogService.logEvent(null, "REGISTER_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "New user " + email + " registered in PENDING status", httpRequest);
+        auditLogService.logEvent(null, "REGISTER_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "New user " + email + " registered and activated", httpRequest);
 
         return mapToProfile(user);
     }

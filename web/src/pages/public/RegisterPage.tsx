@@ -78,8 +78,8 @@ export const RegisterPage: React.FC = () => {
       // 2. Call backend register API with public key
       await register(email.trim(), password, firstName, lastName, keyPair.publicKeyBase64);
 
-      // 3. Navigate to dedicated 6-digit OTP verification page (/verify-email)
-      navigate(`/verify-email?email=${encodeURIComponent(email.trim())}`);
+      // 3. Account created & activated! Navigate to login with verified banner
+      navigate('/login?verified=true');
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

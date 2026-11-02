@@ -69,21 +69,50 @@ public class EmailDeliveryService {
         outbox.setAttemptCount(outbox.getAttemptCount() + 1);
 
         try {
-            // Prioritize HTTPS REST APIs over port 443 (Render never blocks port 443)
+            boolean sent = false;
+            String failureReason = "";
+
+            // 1. Try Brevo HTTPS REST API
             if (brevoApiKey != null && !brevoApiKey.isBlank()) {
-                sendViaBrevo(outbox.getRecipient(), outbox.getSubject(), outbox.getBodyText(), outbox.getBodyHtml());
-            } else if (resendApiKey != null && !resendApiKey.isBlank()) {
-                sendViaResend(outbox.getRecipient(), outbox.getSubject(), outbox.getBodyText(), outbox.getBodyHtml());
-            } else {
-                sendViaSmtp(outbox);
+                try {
+                    sendViaBrevo(outbox.getRecipient(), outbox.getSubject(), outbox.getBodyText(), outbox.getBodyHtml());
+                    sent = true;
+                } catch (Exception be) {
+                    failureReason = "Brevo: " + be.getMessage();
+                    log.warn("Brevo attempt failed: {}. Falling back to secondary delivery.", be.getMessage());
+                }
             }
 
-            outbox.setStatus("SENT");
-            outbox.setSentAt(Instant.now());
-            outbox.setLastError(null);
-            outboxRepository.save(outbox);
+            // 2. Try Resend HTTPS REST API
+            if (!sent && resendApiKey != null && !resendApiKey.isBlank()) {
+                try {
+                    sendViaResend(outbox.getRecipient(), outbox.getSubject(), outbox.getBodyText(), outbox.getBodyHtml());
+                    sent = true;
+                } catch (Exception re) {
+                    failureReason = failureReason.isEmpty() ? ("Resend: " + re.getMessage()) : (failureReason + " | Resend: " + re.getMessage());
+                    log.warn("Resend attempt failed: {}. Falling back to SMTP.", re.getMessage());
+                }
+            }
 
-            log.info("Email delivered to {} successfully. Subject: {}", outbox.getRecipient(), outbox.getSubject());
+            // 3. Try standard SMTP
+            if (!sent) {
+                try {
+                    sendViaSmtp(outbox);
+                    sent = true;
+                } catch (Exception se) {
+                    failureReason = failureReason.isEmpty() ? ("SMTP: " + se.getMessage()) : (failureReason + " | SMTP: " + se.getMessage());
+                }
+            }
+
+            if (sent) {
+                outbox.setStatus("SENT");
+                outbox.setSentAt(Instant.now());
+                outbox.setLastError(null);
+                outboxRepository.save(outbox);
+                log.info("Email delivered to {} successfully. Subject: {}", outbox.getRecipient(), outbox.getSubject());
+            } else {
+                throw new RuntimeException("All delivery channels failed: " + failureReason);
+            }
         } catch (Exception e) {
             String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
             log.warn("Email delivery to {} failed (attempt {}): {}", outbox.getRecipient(), outbox.getAttemptCount(), errorMsg);

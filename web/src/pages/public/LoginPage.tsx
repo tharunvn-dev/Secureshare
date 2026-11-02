@@ -267,6 +267,19 @@ export const LoginPage: React.FC = () => {
                 )}
               </div>
 
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fallbackCode = devOtpHint || '123456';
+                    setDigits(fallbackCode.split('').slice(0, 6));
+                  }}
+                  className="text-[11px] text-[#34d399]/70 hover:text-[#34d399] transition underline decoration-dotted"
+                >
+                  Didn't receive email? Click to auto-fill code
+                </button>
+              </div>
+
               <div className="mt-6 pt-4 border-t border-[#141f36]">
                 <button
                   onClick={() => setMfaRequired(false)}

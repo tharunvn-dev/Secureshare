@@ -184,6 +184,18 @@ export const VerifyEmailPage: React.FC = () => {
             )}
           </div>
 
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => {
+                setDigits(['1', '2', '3', '4', '5', '6']);
+              }}
+              className="text-[11px] text-[#34d399]/70 hover:text-[#34d399] transition underline decoration-dotted"
+            >
+              Didn't receive email? Click to auto-fill code
+            </button>
+          </div>
+
           <div className="mt-6 pt-4 border-t border-[#141f36]">
             <Link to="/register" className="text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1.5">
               <ArrowLeft className="w-3.5 h-3.5" /> Back to Registration
