@@ -44,6 +44,11 @@ export const LoginPage: React.FC = () => {
   const isVerified = searchParams.get('verified') === 'true';
   const isExpired = searchParams.get('expired') === 'true';
 
+  // Warm up Render backend as soon as user opens login page
+  useEffect(() => {
+    api.get('/actuator/health').catch(() => {});
+  }, []);
+
   // Timer for MFA
   useEffect(() => {
     if (!mfaRequired || mfaTimer <= 0) return;

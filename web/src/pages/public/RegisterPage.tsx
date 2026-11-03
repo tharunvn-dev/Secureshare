@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, Mail, User, Shield, ArrowRight, AlertCircle, Server } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { generateEccKeyPair, downloadFile } from '../../utils/crypto';
-import { getErrorMessage } from '../../api/client';
+import { api, getErrorMessage } from '../../api/client';
 import { TopFeatureBar } from '../../components/common/TopFeatureBar';
 
 export const RegisterPage: React.FC = () => {
@@ -18,6 +18,11 @@ export const RegisterPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Warm up Render backend as soon as user opens register page
+  useEffect(() => {
+    api.get('/actuator/health').catch(() => {});
+  }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
