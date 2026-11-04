@@ -205,6 +205,19 @@ export const LoginPage: React.FC = () => {
                 <strong className="text-white font-mono">{email}</strong>
               </p>
 
+              {devOtpHint && (
+                <div className="mt-3 p-2.5 rounded-lg bg-[#10b981]/15 border border-[#10b981]/40 text-[#10b981] text-xs flex items-center justify-between">
+                  <span className="font-mono font-bold tracking-widest text-sm">Code: {devOtpHint}</span>
+                  <button
+                    type="button"
+                    onClick={() => setDigits(devOtpHint.split('').slice(0, 6))}
+                    className="px-2.5 py-1 rounded bg-[#10b981] text-slate-950 font-bold hover:bg-[#34d399] transition text-[11px]"
+                  >
+                    Auto-Fill
+                  </button>
+                </div>
+              )}
+
               {error && (
                 <div className="mt-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2 text-left">
                   <AlertCircle className="w-4 h-4 shrink-0" />
