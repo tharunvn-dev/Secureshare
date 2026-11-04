@@ -3,6 +3,7 @@ package com.sjcit.securestorage.controller;
 import com.sjcit.securestorage.dto.*;
 import com.sjcit.securestorage.entity.User;
 import com.sjcit.securestorage.service.AuthService;
+import com.sjcit.securestorage.service.EmailDeliveryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
@@ -21,9 +22,18 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailDeliveryService emailDeliveryService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, EmailDeliveryService emailDeliveryService) {
         this.authService = authService;
+        this.emailDeliveryService = emailDeliveryService;
+    }
+
+    @RequestMapping(value = "/test-email", method = {RequestMethod.GET, RequestMethod.POST})
+    @Operation(summary = "Diagnostic endpoint to verify email delivery configuration")
+    public ResponseEntity<Map<String, Object>> testEmailDelivery(@RequestParam(required = false) String email) {
+        Map<String, Object> res = emailDeliveryService.sendTestEmail(email);
+        return ResponseEntity.ok(res);
     }
 
     @PostMapping("/register")

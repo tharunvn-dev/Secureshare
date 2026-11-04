@@ -88,6 +88,7 @@ app:
     brevo-api-key: ${BREVO_API_KEY:${MAIL_API_KEY:}}
     resend-api-key: ${RESEND_API_KEY:}
     resend-from: ${RESEND_FROM:SecureShare <onboarding@resend.dev>}
+    webhook-url: ${MAIL_WEBHOOK_URL:}
   oauth:
     google:
       client-id: ${GOOGLE_CLIENT_ID:944327300600-20jl1b4c6h4nud00u1o123r9mvrmeesj.apps.googleusercontent.com}

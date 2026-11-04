@@ -20,6 +20,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Service
 public class EmailDeliveryService {
@@ -42,11 +44,15 @@ public class EmailDeliveryService {
     @Value("${app.mail.resend-from:SecureShare <onboarding@resend.dev>}")
     private String resendFrom;
 
+    @Value("${app.mail.webhook-url:}")
+    private String mailWebhookUrl;
+
     public EmailDeliveryService(JavaMailSender mailSender, EmailOutboxRepository outboxRepository) {
         this.mailSender = mailSender;
         this.outboxRepository = outboxRepository;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
+                .followRedirects(HttpClient.Redirect.ALWAYS)
                 .build();
     }
 
@@ -72,18 +78,29 @@ public class EmailDeliveryService {
             boolean sent = false;
             String failureReason = "";
 
-            // 1. Try Brevo HTTPS REST API
-            if (brevoApiKey != null && !brevoApiKey.isBlank()) {
+            // 1. Try Google Apps Script / Custom HTTPS Webhook Relay
+            if (mailWebhookUrl != null && !mailWebhookUrl.isBlank()) {
+                try {
+                    sendViaWebhook(outbox.getRecipient(), outbox.getSubject(), outbox.getBodyText(), outbox.getBodyHtml());
+                    sent = true;
+                } catch (Exception we) {
+                    failureReason = "Webhook: " + we.getMessage();
+                    log.warn("Webhook attempt failed: {}. Falling back to secondary delivery.", we.getMessage());
+                }
+            }
+
+            // 2. Try Brevo HTTPS REST API
+            if (!sent && brevoApiKey != null && !brevoApiKey.isBlank()) {
                 try {
                     sendViaBrevo(outbox.getRecipient(), outbox.getSubject(), outbox.getBodyText(), outbox.getBodyHtml());
                     sent = true;
                 } catch (Exception be) {
-                    failureReason = "Brevo: " + be.getMessage();
+                    failureReason = failureReason.isEmpty() ? ("Brevo: " + be.getMessage()) : (failureReason + " | Brevo: " + be.getMessage());
                     log.warn("Brevo attempt failed: {}. Falling back to secondary delivery.", be.getMessage());
                 }
             }
 
-            // 2. Try Resend HTTPS REST API
+            // 3. Try Resend HTTPS REST API
             if (!sent && resendApiKey != null && !resendApiKey.isBlank()) {
                 try {
                     sendViaResend(outbox.getRecipient(), outbox.getSubject(), outbox.getBodyText(), outbox.getBodyHtml());
@@ -94,7 +111,7 @@ public class EmailDeliveryService {
                 }
             }
 
-            // 3. Try standard SMTP
+            // 4. Try standard SMTP
             if (!sent) {
                 try {
                     sendViaSmtp(outbox);
@@ -122,6 +139,38 @@ public class EmailDeliveryService {
             outbox.setStatus("FAILED");
             outbox.setLastError(errorMsg);
             outboxRepository.save(outbox);
+        }
+    }
+
+    private void sendViaWebhook(String recipient, String subject, String bodyText, String bodyHtml) {
+        try {
+            JsonObject payload = new JsonObject();
+            payload.addProperty("to", recipient);
+            payload.addProperty("recipient", recipient);
+            payload.addProperty("subject", subject);
+            if (bodyText != null && !bodyText.isBlank()) {
+                payload.addProperty("body", bodyText);
+                payload.addProperty("text", bodyText);
+            }
+            if (bodyHtml != null && !bodyHtml.isBlank()) {
+                payload.addProperty("htmlBody", bodyHtml);
+                payload.addProperty("html", bodyHtml);
+            }
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(mailWebhookUrl.trim()))
+                    .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(15))
+                    .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 400) {
+                throw new RuntimeException("Webhook error (" + response.statusCode() + "): " + response.body());
+            }
+            log.info("Delivered email via HTTPS Webhook to {}", recipient);
+        } catch (Exception e) {
+            throw new RuntimeException("Webhook delivery failed: " + e.getMessage(), e);
         }
     }
 
@@ -319,5 +368,27 @@ public class EmailDeliveryService {
             """, senderName, fileName);
 
         queueEmail(recipient, subject, bodyText, bodyHtml);
+    }
+
+    public Map<String, Object> sendTestEmail(String recipient) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        String testRecipient = (recipient != null && !recipient.isBlank()) ? recipient.trim() : (mailFrom != null && mailFrom.contains("@") ? mailFrom : "tharunsanatani@gmail.com");
+        result.put("recipient", testRecipient);
+        result.put("webhookConfigured", mailWebhookUrl != null && !mailWebhookUrl.isBlank());
+        result.put("brevoConfigured", brevoApiKey != null && !brevoApiKey.isBlank());
+        result.put("resendConfigured", resendApiKey != null && !resendApiKey.isBlank());
+
+        String subject = "SecureShare Email Delivery Test";
+        String bodyText = "This is a verification email from SecureShare to confirm that your email delivery channel is operational.\n\nTimestamp: " + Instant.now();
+        String bodyHtml = "<div style=\"font-family:sans-serif;padding:20px;background:#0f172a;color:#f8fafc;border-radius:8px;\">"
+                + "<h2 style=\"color:#38bdf8;\">Email Delivery Verified</h2>"
+                + "<p>This is a test notification confirming that your SecureShare email delivery pipeline is working.</p>"
+                + "<p style=\"color:#94a3b8;font-size:12px;\">Timestamp: " + Instant.now() + "</p></div>";
+
+        EmailOutbox outbox = queueEmail(testRecipient, subject, bodyText, bodyHtml);
+        result.put("outboxId", outbox.getId());
+        result.put("status", outbox.getStatus());
+        result.put("lastError", outbox.getLastError());
+        return result;
     }
 }
