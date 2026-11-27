@@ -95,7 +95,7 @@ app:
       client-secret: ${GOOGLE_CLIENT_SECRET:unconfigured-client-secret}
   supabase:
     url: ${SUPABASE_URL:https://khljiklngiyyzvolkzqf.supabase.co}
-    anon-key: ${SUPABASE_ANON_KEY:sb_secret_9A243L9lYkwhAzBj3YzpMA_vbKNPfEd}
+    anon-key: ${SUPABASE_ANON_KEY:sb_publishable_ASGCnYik7k2SN2y0qMwZkA_lrLRQD1B}
 
 # Actuator Endpoints Configuration
 management:
