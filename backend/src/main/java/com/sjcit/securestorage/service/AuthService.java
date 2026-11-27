@@ -253,6 +253,10 @@ public class AuthService {
                 if (payload.get("family_name") != null) user.setLastName((String) payload.get("family_name"));
                 user.setUpdatedAt(Instant.now());
                 user = userRepository.save(user);
+            } else if ("PENDING".equalsIgnoreCase(user.getStatus())) {
+                user.setStatus("ACTIVE");
+                user.setUpdatedAt(Instant.now());
+                user = userRepository.save(user);
             } else if ("SUSPENDED".equalsIgnoreCase(user.getStatus())) {
                 throw new UnauthorizedException("Your account has been suspended.");
             }
@@ -300,6 +304,10 @@ public class AuthService {
                 user.setStatus("ACTIVE");
                 if (claims.getFirstName() != null) user.setFirstName(claims.getFirstName());
                 if (claims.getLastName() != null) user.setLastName(claims.getLastName());
+                user.setUpdatedAt(Instant.now());
+                user = userRepository.save(user);
+            } else if ("PENDING".equalsIgnoreCase(user.getStatus())) {
+                user.setStatus("ACTIVE");
                 user.setUpdatedAt(Instant.now());
                 user = userRepository.save(user);
             } else if ("SUSPENDED".equalsIgnoreCase(user.getStatus())) {
