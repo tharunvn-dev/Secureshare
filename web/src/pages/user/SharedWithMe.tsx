@@ -27,6 +27,7 @@ export const SharedWithMe: React.FC = () => {
   const [sortBy, setSortBy] = useState('NEWEST');
 
   // Modal States
+  const [downloadingShareId, setDownloadingShareId] = useState<string | null>(null);
   const [decryptModalShare, setDecryptModalShare] = useState<{ id: string; filename: string; size?: number } | null>(null);
   const [activeMenuShareId, setActiveMenuShareId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -70,9 +71,41 @@ export const SharedWithMe: React.FC = () => {
     fetchShares();
   }, []);
 
-  const handleDownload = (fileId: string, filename: string, size?: number) => {
+  const handleDownload = async (fileId: string, filename: string, size?: number) => {
     setActiveMenuShareId(null);
-    setDecryptModalShare({ id: fileId, filename, size });
+    if (!privateKey) {
+      setDecryptModalShare({ id: fileId, filename, size });
+      return;
+    }
+
+    setDownloadingShareId(fileId);
+    try {
+      let cleanKey = privateKey.trim();
+      if (cleanKey.includes('-----BEGIN')) {
+        cleanKey = cleanKey
+          .replace(/-----BEGIN[\s\S]*?-----/g, '')
+          .replace(/-----END[\s\S]*?-----/g, '')
+          .replace(/["']/g, '')
+          .replace(/\s+/g, '');
+      }
+      const response = await api.get(`/files/${fileId}/download`, {
+        responseType: 'blob',
+        headers: { 'X-Private-Key': cleanKey },
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      // Fallback to Stego Key Decrypt Modal if session key fails
+      setDecryptModalShare({ id: fileId, filename, size });
+    } finally {
+      setDownloadingShareId(null);
+    }
   };
 
   const handleRunIntegrityCheck = async (fileId: string, filename: string) => {
@@ -242,10 +275,15 @@ export const SharedWithMe: React.FC = () => {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => handleDownload(share.fileId, filename, share.originalSize)}
-                            className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                            disabled={downloadingShareId === share.fileId}
+                            className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
                             title="Download & Decrypt"
                           >
-                            <Download className="w-4 h-4" />
+                            {downloadingShareId === share.fileId ? (
+                              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Download className="w-4 h-4" />
+                            )}
                           </button>
 
                           <button

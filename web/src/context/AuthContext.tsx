@@ -66,9 +66,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (user?.email) {
       const userKey = localStorage.getItem(`ecc_private_key_${user.email}`);
-      setPrivateKeyState(sanitizePrivateKey(userKey));
-    } else {
-      setPrivateKeyState(null);
+      const fallbackKey = localStorage.getItem('ecc_private_key');
+      const resolved = userKey || fallbackKey;
+      if (resolved && !userKey) {
+        localStorage.setItem(`ecc_private_key_${user.email}`, sanitizePrivateKey(resolved) || '');
+      }
+      setPrivateKeyState(sanitizePrivateKey(resolved));
     }
   }, [user?.email]);
 

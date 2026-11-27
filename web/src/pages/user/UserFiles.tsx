@@ -52,7 +52,7 @@ export const UserFiles: React.FC = () => {
     d.setDate(d.getDate() + 1);
     return d.toISOString().split('T')[0];
   });
-  const [oneTimeLink, setOneTimeLink] = useState(true);
+  const [oneTimeLink, setOneTimeLink] = useState(false);
   const [sendEmailNotification, setSendEmailNotification] = useState(true);
   const [shareSubmitting, setShareSubmitting] = useState(false);
   const [shareSuccess, setShareSuccess] = useState<string | null>(null);
@@ -138,9 +138,14 @@ export const UserFiles: React.FC = () => {
     e.preventDefault();
     if (!shareFile) return;
 
+    if (!recipientEmail.trim() && !oneTimeLink) {
+      setShareError('Please enter a recipient email address to share directly, or check "Generate one-time download link".');
+      return;
+    }
+
     if (recipientEmail.trim() && !privateKey) {
-      alert(
-        "NIST P-256 ECC Private Key Required\n\nDirect user sharing re-wraps the cryptographic keys for the recipient's public key, which requires your local private key to unwrap.\n\nPlease open Keyring Settings in the top bar to generate or import your private key first."
+      setShareError(
+        "Your NIST P-256 ECC Private Key is required to re-encrypt this file for the recipient. Please open Keyring Settings in the top navigation bar to generate or restore your key."
       );
       return;
     }
@@ -167,11 +172,11 @@ export const UserFiles: React.FC = () => {
               headers: privateKey ? { 'X-Private-Key': privateKey } : {},
             }
           );
-          results.push(`Shared directly with ${recipientEmail.trim()} (they can access it under 'Shared With Me').`);
+          results.push(`Successfully shared with ${recipientEmail.trim()}! The file is now available in their "Shared With Me" tab.`);
         } catch (shareErr: any) {
           const msg = getErrorMessage(shareErr);
           if (msg.toLowerCase().includes('already exists') || msg.toLowerCase().includes('active share')) {
-            results.push(`Note: Active share with ${recipientEmail.trim()} already exists in portal.`);
+            results.push(`Note: Active share with ${recipientEmail.trim()} already exists in the portal.`);
           } else if (
             msg.includes('Key Mismatch') ||
             msg.includes('AES-GCM authentication tag') ||

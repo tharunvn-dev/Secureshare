@@ -71,6 +71,8 @@ export const RegisterPage: React.FC = () => {
 
       // 1. Generate client-side ECC P-256 Keypair
       const keyPair = await generateEccKeyPair();
+      localStorage.setItem(`ecc_private_key_${trimmedEmail}`, keyPair.privateKeyBase64);
+      localStorage.setItem('ecc_private_key', keyPair.privateKeyBase64);
       setPrivateKey(keyPair.privateKeyBase64);
 
       // Download backup key
