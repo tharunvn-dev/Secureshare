@@ -9,7 +9,7 @@
   }
 }
 
-/* SecureStorage Clean Modern Cards */
+/* Secure Vault Clean Modern Cards */
 .sec-card {
   @apply bg-white border border-slate-200/90 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200;
 }

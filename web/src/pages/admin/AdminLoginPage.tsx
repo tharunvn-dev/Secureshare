@@ -35,7 +35,7 @@ export const AdminLoginPage: React.FC = () => {
         <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
           <Shield className="w-5 h-5" />
         </div>
-        <span className="font-bold text-xl text-slate-900 tracking-tight">SecureStorage</span>
+        <span className="font-bold text-xl text-slate-900 tracking-tight">Secure Vault</span>
       </div>
 
       <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-2xl shadow-sm p-8 sm:p-10 relative">
@@ -60,7 +60,7 @@ export const AdminLoginPage: React.FC = () => {
             <input
               type="email"
               required
-              placeholder="admin@securestorage.com"
+              placeholder="admin@securevault.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all text-xs"

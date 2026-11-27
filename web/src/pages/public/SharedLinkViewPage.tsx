@@ -94,7 +94,7 @@ export const SharedLinkViewPage: React.FC = () => {
         <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
           <Shield className="w-5 h-5" />
         </div>
-        <span className="font-bold text-xl text-slate-900 tracking-tight">SecureStorage</span>
+        <span className="font-bold text-xl text-slate-900 tracking-tight">Secure Vault</span>
       </div>
 
       <div className="w-full max-w-lg bg-white border border-slate-200/90 rounded-2xl p-8 shadow-sm relative">
@@ -202,7 +202,7 @@ export const SharedLinkViewPage: React.FC = () => {
 
         <div className="mt-8 pt-4 border-t border-slate-100 text-center">
           <Link to="/" className="text-xs text-blue-600 hover:text-blue-700 font-semibold">
-            &larr; Return to SecureStorage Home
+            &larr; Return to Secure Vault Home
           </Link>
         </div>
       </div>

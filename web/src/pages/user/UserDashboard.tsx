@@ -98,10 +98,35 @@ export const UserDashboard: React.FC = () => {
   };
 
   const recentActivities = [
-    { title: 'File uploaded', detail: safeFiles[0]?.originalFilename || 'Project_final.pdf', time: '2 hours ago', icon: UploadCloud, color: 'text-blue-600 bg-blue-50' },
-    { title: 'File shared', detail: 'with team@secure.com', time: '5 hours ago', icon: Share2, color: 'text-blue-600 bg-blue-50' },
-    { title: 'File downloaded', detail: 'image.png', time: '1 day ago', icon: Download, color: 'text-blue-600 bg-blue-50' },
-    { title: 'Login successful', detail: 'from current session', time: '2 days ago', icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-50' },
+    ...(safeFiles.length > 0
+      ? [
+          {
+            title: 'Encrypted file stored',
+            detail: safeFiles[0].originalFilename,
+            time: safeFiles[0].createdAt ? new Date(safeFiles[0].createdAt).toLocaleDateString() : 'Recent',
+            icon: UploadCloud,
+            color: 'text-blue-600 bg-blue-50',
+          },
+        ]
+      : []),
+    ...(sharedByMeCount > 0
+      ? [
+          {
+            title: 'Active file shares',
+            detail: `${sharedByMeCount} file(s) shared`,
+            time: 'Ongoing',
+            icon: Share2,
+            color: 'text-indigo-600 bg-indigo-50',
+          },
+        ]
+      : []),
+    {
+      title: 'Current session active',
+      detail: user?.email || 'Authenticated',
+      time: 'Active now',
+      icon: CheckCircle2,
+      color: 'text-emerald-600 bg-emerald-50',
+    },
   ];
 
   return (

@@ -85,14 +85,14 @@ export const RegisterPage: React.FC = () => {
         <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
           <Shield className="w-5 h-5" />
         </div>
-        <span className="font-bold text-xl text-slate-900 tracking-tight">SecureStorage</span>
+        <span className="font-bold text-xl text-slate-900 tracking-tight">Secure Vault</span>
       </div>
 
       {/* Main Card (matching Screen 3 from Design System) */}
       <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-2xl shadow-sm p-8 sm:p-10 relative">
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Create Your Account</h2>
-          <p className="text-xs text-slate-500 mt-1">Join SecureStorage and keep your files safe</p>
+          <p className="text-xs text-slate-500 mt-1">Join Secure Vault and keep your files safe</p>
         </div>
 
         {error && (

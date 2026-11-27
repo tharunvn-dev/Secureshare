@@ -44,7 +44,7 @@ export const AdminLayout: React.FC = () => {
           <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white">
             <Shield className="w-4 h-4" />
           </div>
-          <span className="font-bold text-slate-900 text-sm">SecureStorage Admin</span>
+          <span className="font-bold text-slate-900 text-sm">Secure Vault Admin</span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -67,7 +67,7 @@ export const AdminLayout: React.FC = () => {
               <Shield className="w-4 h-4" />
             </div>
             <div>
-              <h1 className="font-bold text-sm text-slate-900">SecureStorage</h1>
+              <h1 className="font-bold text-sm text-slate-900">Secure Vault</h1>
               <p className="text-[10px] text-blue-600 font-medium">Admin Terminal</p>
             </div>
           </div>

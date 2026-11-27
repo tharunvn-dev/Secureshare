@@ -103,7 +103,7 @@ export const VerifyEmailPage: React.FC = () => {
         <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
           <Shield className="w-5 h-5" />
         </div>
-        <span className="font-bold text-xl text-slate-900 tracking-tight">SecureStorage</span>
+        <span className="font-bold text-xl text-slate-900 tracking-tight">Secure Vault</span>
       </div>
 
       {/* Main Card (matching Screen 4 from Design System) */}

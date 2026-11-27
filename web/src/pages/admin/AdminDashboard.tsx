@@ -28,24 +28,14 @@ export const AdminDashboard: React.FC = () => {
     });
   }, []);
 
-  // Built-in preview users matching Screen 13 from Design System
-  const fallbackUsers = [
-    { id: '1', displayName: 'Alice Smith', email: 'alice@example.com', role: 'User', status: 'Active', joined: 'Sep 24, 2026' },
-    { id: '2', displayName: 'Bob Johnson', email: 'bob@example.com', role: 'User', status: 'Active', joined: 'Sep 20, 2026' },
-    { id: '3', displayName: 'Carol White', email: 'carol@example.com', role: 'User', status: 'Active', joined: 'Sep 18, 2026' },
-    { id: '4', displayName: 'David Lee', email: 'david@example.com', role: 'User', status: 'Active', joined: 'Sep 15, 2026' },
-  ];
-
-  const displayUsers = users.length > 0
-    ? users.map((u) => ({
-        id: u.id,
-        displayName: u.displayName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'User',
-        email: u.email,
-        role: u.roles?.[0]?.replace('ROLE_', '') || 'User',
-        status: u.status === 'ACTIVE' ? 'Active' : u.status,
-        joined: new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      }))
-    : fallbackUsers;
+  const displayUsers = users.map((u) => ({
+    id: u.id,
+    displayName: u.displayName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'User',
+    email: u.email,
+    role: u.roles?.[0]?.replace('ROLE_', '') || 'User',
+    status: u.status === 'ACTIVE' ? 'Active' : u.status,
+    joined: u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently',
+  }));
 
   return (
     <div className="space-y-6">
@@ -65,7 +55,7 @@ export const AdminDashboard: React.FC = () => {
               <Users className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">{stats?.totalUsers || 8}</p>
+          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">{stats?.totalUsers ?? users.length}</p>
         </div>
 
         {/* Total Files */}
@@ -76,7 +66,7 @@ export const AdminDashboard: React.FC = () => {
               <HardDrive className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">{stats?.totalFiles || 45}</p>
+          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">{stats?.totalFiles ?? 0}</p>
         </div>
 
         {/* Active Shares */}
@@ -87,7 +77,7 @@ export const AdminDashboard: React.FC = () => {
               <Share2 className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">{stats?.totalShares || 12}</p>
+          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">{stats?.totalShares ?? 0}</p>
         </div>
 
         {/* System Status */}
@@ -148,20 +138,29 @@ export const AdminDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {displayUsers.map((u) => (
-                <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-3.5 px-6 font-semibold text-slate-900">{u.displayName}</td>
-                  <td className="py-3.5 px-6 text-slate-600">{u.email}</td>
-                  <td className="py-3.5 px-6 text-slate-500">{u.role}</td>
-                  <td className="py-3.5 px-6">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      {u.status}
-                    </span>
+              {displayUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                    <p className="text-sm font-semibold text-slate-600">No registered users found</p>
+                    <p className="text-xs text-slate-400 mt-1">Users will appear here as they register.</p>
                   </td>
-                  <td className="py-3.5 px-6 text-right text-slate-400">{u.joined}</td>
                 </tr>
-              ))}
+              ) : (
+                displayUsers.map((u) => (
+                  <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3.5 px-6 font-semibold text-slate-900">{u.displayName}</td>
+                    <td className="py-3.5 px-6 text-slate-600">{u.email}</td>
+                    <td className="py-3.5 px-6 text-slate-500">{u.role}</td>
+                    <td className="py-3.5 px-6">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        {u.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-6 text-right text-slate-400">{u.joined}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

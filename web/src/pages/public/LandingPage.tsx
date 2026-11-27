@@ -20,7 +20,7 @@ export const LandingPage: React.FC = () => {
             <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
               <Shield className="w-4.5 h-4.5" />
             </div>
-            <span className="font-bold text-lg text-slate-900 tracking-tight">SecureStorage</span>
+            <span className="font-bold text-lg text-slate-900 tracking-tight">Secure Vault</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
@@ -188,9 +188,9 @@ export const LandingPage: React.FC = () => {
             <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white">
               <Shield className="w-3.5 h-3.5" />
             </div>
-            <span className="font-bold text-slate-900">SecureStorage</span>
+            <span className="font-bold text-slate-900">Secure Vault</span>
           </div>
-          <p>&copy; {new Date().getFullYear()} SecureStorage Inc. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Secure Vault Inc. All rights reserved.</p>
           <div className="flex gap-4">
             <Link to="/admin/login" className="text-slate-500 hover:text-blue-600">Admin Portal</Link>
           </div>

@@ -76,7 +76,7 @@ export const UserLayout: React.FC = () => {
             <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs">
               <Shield className="w-4 h-4" />
             </div>
-            <span className="font-bold text-slate-900 text-sm tracking-wide">SecureStorage</span>
+            <span className="font-bold text-slate-900 text-sm tracking-wide">Secure Vault</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -106,7 +106,7 @@ export const UserLayout: React.FC = () => {
               <MoreVertical className="w-5 h-5 text-slate-400 hover:text-blue-600 transition-colors" />
             </div>
 
-            {/* Hovered State: SecureStorage Logo & Application Name */}
+            {/* Hovered State: Secure Vault Logo & Application Name */}
             <div
               className={`flex items-center gap-3 transition-opacity duration-300 whitespace-nowrap overflow-hidden ${
                 isExpanded ? 'opacity-100 delay-75' : 'opacity-0 pointer-events-none'
@@ -116,7 +116,7 @@ export const UserLayout: React.FC = () => {
                 <Shield className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
-                <h1 className="font-bold text-sm text-slate-900 tracking-wide">SecureStorage</h1>
+                <h1 className="font-bold text-sm text-slate-900 tracking-wide">Secure Vault</h1>
                 <p className="text-[10px] text-blue-600 font-medium">Cloud Vault</p>
               </div>
             </div>
@@ -211,7 +211,7 @@ export const UserLayout: React.FC = () => {
                 <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs">
                   <Shield className="w-4 h-4" />
                 </div>
-                <span className="font-bold text-slate-900 text-sm tracking-wide">SecureStorage</span>
+                <span className="font-bold text-slate-900 text-sm tracking-wide">Secure Vault</span>
               </div>
 
               <div className="w-72 relative">
