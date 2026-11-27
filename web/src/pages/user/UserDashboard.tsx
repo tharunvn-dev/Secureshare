@@ -75,7 +75,7 @@ export const UserDashboard: React.FC = () => {
   const totalStorageMB = (totalStorageBytes / (1024 * 1024)).toFixed(1);
   const totalStorageKB = (totalStorageBytes / 1024).toFixed(0);
   const quotaGB = 10;
-  const usedRatio = Math.max(Math.min((totalStorageBytes / (quotaGB * 1024 * 1024 * 1024)) * 100, 100), totalFiles > 0 ? 4.8 : 0);
+  const usedRatio = totalFiles > 0 ? Math.min((totalStorageBytes / (quotaGB * 1024 * 1024 * 1024)) * 100, 100) : 0;
 
   const getFileBadge = (filename: string) => {
     const ext = filename.split('.').pop()?.toUpperCase() || 'FILE';
@@ -230,7 +230,7 @@ export const UserDashboard: React.FC = () => {
                   stroke="#2563eb"
                   strokeWidth="8"
                   strokeDasharray="238.76"
-                  strokeDashoffset={238.76 - (238.76 * Math.max(usedRatio, 4.8)) / 100}
+                  strokeDashoffset={238.76 - (238.76 * usedRatio) / 100}
                   strokeLinecap="round"
                   fill="transparent"
                   className="transition-all duration-1000"
@@ -239,10 +239,14 @@ export const UserDashboard: React.FC = () => {
 
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                 <span className="text-2xl font-extrabold text-slate-900">
-                  {usedRatio > 0 ? `${usedRatio.toFixed(1)}%` : '4.8%'}
+                  {totalFiles > 0 ? `${usedRatio < 0.1 ? '<0.1' : usedRatio.toFixed(1)}%` : '0%'}
                 </span>
                 <span className="text-[11px] text-slate-500 mt-0.5">
-                  {parseFloat(totalStorageMB) > 0.05 ? `${totalStorageMB} MB / 10 GB` : '2.4 MB / 50 KB'}
+                  {totalStorageBytes > 0
+                    ? (totalStorageBytes >= 1024 * 1024
+                        ? `${totalStorageMB} MB / 10 GB`
+                        : `${totalStorageKB} KB / 10 GB`)
+                    : '0 KB / 10 GB'}
                 </span>
               </div>
             </div>
