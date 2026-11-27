@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   Shield,
@@ -10,19 +10,16 @@ import {
   Bell,
   Settings,
   LogOut,
-  Search,
   Menu,
   X,
-  Lock,
+  Search,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../api/client';
 
 export const AdminLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const handleLogout = async () => {
     await logout();
@@ -40,41 +37,43 @@ export const AdminLayout: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#060b14] text-slate-100 flex flex-col font-sans">
-      <div className="flex-1 flex flex-col md:flex-row">
-        {/* Mobile Header */}
-        <div className="md:hidden flex items-center justify-between p-4 bg-[#0a101f] border-b border-emerald-950/40">
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-emerald-400" />
-            <span className="font-bold text-white text-sm font-mono tracking-wider">SecureShare Admin</span>
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+      {/* Top Mobile Bar */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+            <Shield className="w-4 h-4" />
           </div>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-slate-400 hover:text-white"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <span className="font-bold text-slate-900 text-sm">SecureStorage Admin</span>
         </div>
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-1.5 text-slate-500 hover:text-slate-800"
+        >
+          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
 
-        {/* Admin Sidebar matching Screens 18-23 */}
+      <div className="flex-1 flex min-h-0">
+        {/* Admin Sidebar */}
         <aside
           className={`${
             mobileMenuOpen ? 'block' : 'hidden'
-          } md:block w-full md:w-60 bg-[#080e1a] border-r border-emerald-950/40 flex flex-col shrink-0 z-20`}
+          } md:block w-64 bg-white border-r border-slate-200 flex flex-col shrink-0`}
         >
-          {/* Brand */}
-          <div className="hidden md:flex items-center gap-3 px-6 py-5 border-b border-emerald-950/40">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center">
-              <Shield className="w-5 h-5" />
+          {/* Header Brand */}
+          <div className="h-16 flex items-center gap-2.5 px-6 border-b border-slate-100">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
+              <Shield className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-bold text-base text-white tracking-wide font-mono">SecureShare</span>
-              <p className="text-[10px] text-emerald-400 font-mono">ADMIN PORTAL</p>
+              <h1 className="font-bold text-sm text-slate-900">SecureStorage</h1>
+              <p className="text-[10px] text-blue-600 font-medium">Admin Terminal</p>
             </div>
           </div>
 
-          {/* Navigation links */}
-          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {/* Navigation Links */}
+          <div className="flex-1 p-3 space-y-1 overflow-y-auto">
             {navLinks.map((link) => {
               const Icon = link.icon;
               return (
@@ -83,10 +82,10 @@ export const AdminLayout: React.FC = () => {
                   to={link.to}
                   onClick={() => setMobileMenuOpen(false)}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
                       isActive
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold shadow-md shadow-emerald-950/50'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-emerald-500/5'
+                        ? 'bg-blue-50 text-blue-600 font-semibold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                     }`
                   }
                 >
@@ -95,59 +94,22 @@ export const AdminLayout: React.FC = () => {
                 </NavLink>
               );
             })}
-          </nav>
+          </div>
 
-          {/* Logout */}
-          <div className="p-4 border-t border-emerald-950/40">
+          {/* Bottom Logout */}
+          <div className="p-3 border-t border-slate-100">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors"
+              className="w-full flex items-center gap-3 px-3.5 py-2 text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4 shrink-0" />
               <span>Logout</span>
             </button>
           </div>
         </aside>
 
-        {/* Main Content Area */}
+        {/* Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Top Navbar */}
-          <header className="hidden md:flex items-center justify-between px-8 py-3.5 bg-[#080e1a]/80 backdrop-blur-md border-b border-emerald-950/40 sticky top-0 z-10">
-            {/* Search Bar */}
-            <div className="relative w-80">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search..."
-                className="w-full pl-9 pr-4 py-1.5 bg-black/40 border border-emerald-950/50 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            {/* Profile Avatar / Notification */}
-            <div className="flex items-center gap-4">
-              <NavLink
-                to="/admin/notifications"
-                className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-xl transition-colors relative"
-              >
-                <Bell className="w-4 h-4" />
-                <span className="w-2 h-2 rounded-full bg-emerald-400 absolute top-1.5 right-1.5" />
-              </NavLink>
-
-              <div className="flex items-center gap-3 pl-2 border-l border-emerald-950/40">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-bold text-xs flex items-center justify-center shadow-md">
-                  AD
-                </div>
-                <div className="hidden lg:block">
-                  <p className="text-xs font-semibold text-white leading-tight">Admin User</p>
-                  <p className="text-[10px] text-emerald-400 font-mono">admin@example.com</p>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          {/* Main Outlet */}
           <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
             <Outlet />
           </main>

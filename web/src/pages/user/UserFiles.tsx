@@ -228,32 +228,67 @@ export const UserFiles: React.FC = () => {
     f.originalFilename.toLowerCase().includes(search.toLowerCase())
   );
 
+  const getFileBadge = (filename: string) => {
+    const ext = filename.split('.').pop()?.toUpperCase() || 'FILE';
+    if (ext === 'PDF') {
+      return <span className="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 font-bold text-[10px] flex items-center justify-center shrink-0">PDF</span>;
+    }
+    if (['PNG', 'JPG', 'JPEG', 'SVG'].includes(ext)) {
+      return <span className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 font-bold text-[10px] flex items-center justify-center shrink-0">PNG</span>;
+    }
+    if (['ZIP', 'TAR', 'GZ'].includes(ext)) {
+      return <span className="w-7 h-7 rounded-lg bg-amber-100 text-amber-600 font-bold text-[10px] flex items-center justify-center shrink-0">ZIP</span>;
+    }
+    if (['DOC', 'DOCX'].includes(ext)) {
+      return <span className="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 font-bold text-[10px] flex items-center justify-center shrink-0">DOC</span>;
+    }
+    if (['PPT', 'PPTX'].includes(ext)) {
+      return <span className="w-7 h-7 rounded-lg bg-orange-100 text-orange-600 font-bold text-[10px] flex items-center justify-center shrink-0">PPT</span>;
+    }
+    return <span className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 font-bold text-[10px] flex items-center justify-center shrink-0">{ext.slice(0, 3)}</span>;
+  };
+
   return (
     <div className="space-y-6 font-sans">
-      {/* SCREEN 10: MY FILES HEADER */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#141f36]">
+      {/* SCREEN 6: MY FILES HEADER */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-wide">My Files</h1>
-          <p className="text-xs text-slate-400 mt-0.5">Encrypted file repository</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">My Files</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Manage your files securely</p>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           {/* Search Box */}
-          <div className="w-full sm:w-64 relative">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+          <div className="w-full sm:w-60 relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
               placeholder="Search files..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="sec-input pl-9 py-1.5 text-xs"
+              className="sec-input pl-9 py-2 text-xs"
             />
           </div>
 
-          {/* + Upload File Button matching Screen 10 */}
+          {/* Filter Dropdown */}
+          <select className="sec-input py-2 px-3 text-xs w-auto cursor-pointer">
+            <option>All Files</option>
+            <option>PDF Documents</option>
+            <option>Images</option>
+            <option>Archives</option>
+          </select>
+
+          {/* Sort Dropdown */}
+          <select className="sec-input py-2 px-3 text-xs w-auto cursor-pointer">
+            <option>Sort by: Newest</option>
+            <option>Sort by: Size</option>
+            <option>Sort by: Name</option>
+          </select>
+
+          {/* + Upload File Button */}
           <Link
             to="/app/upload"
-            className="sec-btn-emerald py-1.5 px-3 text-xs whitespace-nowrap shrink-0"
+            className="sec-btn-blue py-2 px-4 text-xs whitespace-nowrap shrink-0"
           >
             <UploadCloud className="w-4 h-4" /> + Upload File
           </Link>
@@ -261,159 +296,173 @@ export const UserFiles: React.FC = () => {
       </div>
 
       {error && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl">
+        <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl">
           {error}
         </div>
       )}
 
-      {/* SCREEN 10: MY FILES TABLE */}
+      {/* SCREEN 6: MY FILES TABLE */}
       <div className="sec-card overflow-hidden">
         {loading ? (
-          <div className="text-center py-12 text-xs font-mono text-slate-500">Querying vault items...</div>
+          <div className="text-center py-16 text-xs text-slate-400 flex flex-col items-center gap-2">
+            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <span>Loading encrypted files...</span>
+          </div>
         ) : filteredFiles.length === 0 ? (
           <div className="text-center py-16 text-slate-400">
-            <FolderLock className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-            <p className="text-sm font-medium">No files found</p>
-            <p className="text-xs text-slate-500 mt-1">Upload a file to encrypt and store it in your vault.</p>
+            <FolderLock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-sm font-semibold text-slate-700">No files found</p>
+            <p className="text-xs text-slate-400 mt-1">Upload a file to store and encrypt it securely.</p>
+            <Link to="/app/upload" className="mt-4 inline-flex sec-btn-blue py-2 px-4 text-xs">
+              Upload File
+            </Link>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="text-[11px] font-medium text-slate-400 border-b border-[#141f36] bg-[#070e1c]/60">
+              <thead className="text-[11px] font-semibold text-slate-400 border-b border-slate-100 bg-slate-50/60 uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Name</th>
                   <th className="py-3 px-4">Size</th>
-                  <th className="py-3 px-4">Uploaded On</th>
-                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Type</th>
+                  <th className="py-3 px-4">Uploaded</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#141f36] text-slate-300">
-                {filteredFiles.map((file) => (
-                  <tr key={file.id} className="hover:bg-[#0c1830]/40 transition-colors">
-                    <td className="py-3.5 px-4 font-medium text-white max-w-[220px] truncate">
-                      <button
-                        onClick={() => {
-                          setInspectFile(file);
-                          setDetailTab('DETAILS');
-                          setIntegrityResult(null);
-                        }}
-                        className="hover:text-[#10b981] hover:underline transition-colors text-left flex items-center gap-2"
-                      >
-                        <FileText className="w-4 h-4 text-[#10b981] shrink-0" />
-                        <span className="truncate">{file.originalFilename}</span>
-                      </button>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-400">
-                      {(file.encryptedSize / (1024 * 1024)).toFixed(1)} MB
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-400">
-                      {new Date(file.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#10b981]/15 text-[#34d399] border border-[#10b981]/30">
-                        Encrypted
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Details */}
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {filteredFiles.map((file) => {
+                  const ext = file.originalFilename.split('.').pop()?.toUpperCase() || 'FILE';
+                  return (
+                    <tr key={file.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3.5 px-4 font-medium text-slate-900 max-w-[240px] truncate">
                         <button
                           onClick={() => {
                             setInspectFile(file);
                             setDetailTab('DETAILS');
                             setIntegrityResult(null);
                           }}
-                          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors"
-                          title="File Details"
+                          className="hover:text-blue-600 hover:underline transition-colors text-left flex items-center gap-2.5 truncate"
                         >
-                          <Eye className="w-3.5 h-3.5 text-cyan-400" />
+                          {getFileBadge(file.originalFilename)}
+                          <span className="truncate">{file.originalFilename}</span>
                         </button>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-slate-500">
+                        {(file.encryptedSize / 1024).toFixed(0)} KB
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500 font-medium">
+                        {ext}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-400">
+                        {new Date(file.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Details */}
+                          <button
+                            onClick={() => {
+                              setInspectFile(file);
+                              setDetailTab('DETAILS');
+                              setIntegrityResult(null);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="File Details"
+                          >
+                            <Eye className="w-4 h-4 text-blue-600" />
+                          </button>
 
-                        {/* Download */}
-                        <button
-                          onClick={() => handleDownload(file)}
-                          disabled={downloadingFileId === file.id}
-                          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors disabled:opacity-50"
-                          title="Decrypt & Download"
-                        >
-                          {downloadingFileId === file.id ? (
-                            <RefreshCw className="w-3.5 h-3.5 text-emerald-400 animate-spin" />
-                          ) : (
-                            <Download className="w-3.5 h-3.5 text-emerald-400" />
-                          )}
-                        </button>
+                          {/* Download */}
+                          <button
+                            onClick={() => handleDownload(file)}
+                            disabled={downloadingFileId === file.id}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+                            title="Decrypt & Download"
+                          >
+                            {downloadingFileId === file.id ? (
+                              <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
+                            ) : (
+                              <Download className="w-4 h-4 text-emerald-600" />
+                            )}
+                          </button>
 
-                        {/* Stego Key Decrypt */}
-                        <button
-                          onClick={() => setDecryptModalFile(file)}
-                          className="p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-800 rounded transition-colors"
-                          title="Decrypt with Stego Key Image"
-                        >
-                          <ImageIcon className="w-3.5 h-3.5 text-cyan-400" />
-                        </button>
+                          {/* Stego Key Decrypt */}
+                          <button
+                            onClick={() => setDecryptModalFile(file)}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Decrypt with Stego Key Image"
+                          >
+                            <ImageIcon className="w-4 h-4 text-cyan-600" />
+                          </button>
 
-                        {/* Share */}
-                        <button
-                          onClick={() => {
-                            setShareFile(file);
-                            setShareSuccess(null);
-                            setGeneratedLinkToken(null);
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors"
-                          title="Share File"
-                        >
-                          <Share2 className="w-3.5 h-3.5 text-purple-400" />
-                        </button>
+                          {/* Share */}
+                          <button
+                            onClick={() => {
+                              setShareFile(file);
+                              setShareSuccess(null);
+                              setGeneratedLinkToken(null);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Share File"
+                          >
+                            <Share2 className="w-4 h-4 text-purple-600" />
+                          </button>
 
-                        {/* Delete */}
-                        <button
-                          onClick={() => setDeleteFileId(file.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors"
-                          title="Delete File"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {/* Delete */}
+                          <button
+                            onClick={() => setDeleteFileId(file.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            title="Delete File"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+
+            {/* Bottom Drag & Drop Area matching Screen 6 */}
+            <div className="py-4 text-center border-t border-slate-100 text-xs text-slate-400 bg-slate-50/40">
+              <Link to="/app/upload" className="hover:text-blue-600 transition-colors">
+                Drag &amp; drop files here, or <span className="text-blue-600 font-semibold underline">click to upload</span> &bull; Maximum file size: 1 GB
+              </Link>
+            </div>
           </div>
         )}
       </div>
 
-      {/* SCREEN 11: FILE DETAILS MODAL */}
+      {/* SCREEN 8: FILE DETAILS MODAL (matching Screen 8 from Design System) */}
       {inspectFile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-2xl bg-[#0b1325] border border-[#1a2744] rounded-2xl shadow-2xl p-6 sm:p-7 relative text-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-xl p-6 sm:p-7 relative text-slate-800">
             {/* Modal Top Header with File Name, Download, Share, and Close */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#141f36]">
-              <div className="flex items-center gap-2.5 truncate">
-                <FileText className="w-6 h-6 text-[#10b981] shrink-0" />
-                <h3 className="text-lg font-bold text-white truncate">{inspectFile.originalFilename}</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3 truncate">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 truncate">{inspectFile.originalFilename}</h3>
+                  <p className="text-[11px] text-slate-400">
+                    {(inspectFile.originalSize / 1024).toFixed(1)} KB &bull; Uploaded {new Date(inspectFile.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => handleDownload(inspectFile)}
                   disabled={downloadingFileId === inspectFile.id}
-                  className="sec-btn-emerald py-1.5 px-3 text-xs flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {downloadingFileId === inspectFile.id ? (
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                   ) : (
                     <Download className="w-3.5 h-3.5" />
                   )}
-                  {downloadingFileId === inspectFile.id ? 'Decrypting...' : 'Download'}
-                </button>
-                <button
-                  onClick={() => setDecryptModalFile(inspectFile)}
-                  className="sec-btn-glass py-1.5 px-3 text-xs flex items-center gap-1.5 text-cyan-400 hover:border-cyan-500/50"
-                  title="Decrypt file by extracting private key from Stego PNG image"
-                >
-                  <ImageIcon className="w-3.5 h-3.5" /> Stego Decrypt
+                  <span>{downloadingFileId === inspectFile.id ? 'Decrypting...' : 'Download'}</span>
                 </button>
                 <button
                   onClick={() => {
@@ -421,27 +470,35 @@ export const UserFiles: React.FC = () => {
                     setShareSuccess(null);
                     setGeneratedLinkToken(null);
                   }}
-                  className="sec-btn-glass py-1.5 px-3 text-xs"
+                  className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5"
                 >
-                  <Share2 className="w-3.5 h-3.5" /> Share
+                  <Share2 className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Share</span>
+                </button>
+                <button
+                  onClick={() => setDeleteFileId(inspectFile.id)}
+                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl"
+                  title="Delete File"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setInspectFile(null)}
-                  className="p-1.5 text-slate-400 hover:text-white"
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            {/* 4 Tabs matching Screen 11: Details, Integrity, Sharing, Activity */}
-            <div className="flex border-b border-[#141f36] mt-4 text-xs font-medium">
+            {/* Tabs matching Screen 8: Details, Sharing, Activity */}
+            <div className="flex border-b border-slate-100 mt-3 text-xs font-semibold">
               <button
                 onClick={() => setDetailTab('DETAILS')}
                 className={`py-2 px-4 transition-colors border-b-2 ${
                   detailTab === 'DETAILS'
-                    ? 'border-[#10b981] text-[#34d399]'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
                 Details
@@ -455,8 +512,8 @@ export const UserFiles: React.FC = () => {
                 }}
                 className={`py-2 px-4 transition-colors border-b-2 ${
                   detailTab === 'INTEGRITY'
-                    ? 'border-[#10b981] text-[#34d399]'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
                 Integrity
@@ -465,8 +522,8 @@ export const UserFiles: React.FC = () => {
                 onClick={() => setDetailTab('SHARING')}
                 className={`py-2 px-4 transition-colors border-b-2 ${
                   detailTab === 'SHARING'
-                    ? 'border-[#10b981] text-[#34d399]'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
                 Sharing
@@ -475,8 +532,8 @@ export const UserFiles: React.FC = () => {
                 onClick={() => setDetailTab('ACTIVITY')}
                 className={`py-2 px-4 transition-colors border-b-2 ${
                   detailTab === 'ACTIVITY'
-                    ? 'border-[#10b981] text-[#34d399]'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
                 Activity
@@ -484,54 +541,34 @@ export const UserFiles: React.FC = () => {
             </div>
 
             {/* Tab Contents */}
-            <div className="mt-5 text-xs">
+            <div className="mt-4 text-xs">
               {detailTab === 'DETAILS' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 font-mono">
-                  <div className="p-3 bg-[#070e1c] border border-[#141f36] rounded-xl space-y-1">
-                    <span className="text-slate-500 text-[10px] uppercase block">File ID</span>
-                    <span className="text-cyan-400 text-xs">FILE-{inspectFile.id.substring(0, 8)}</span>
+                <div className="space-y-2.5">
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">File Name</span>
+                    <span className="font-semibold text-slate-900">{inspectFile.originalFilename}</span>
                   </div>
-
-                  <div className="p-3 bg-[#070e1c] border border-[#141f36] rounded-xl space-y-1">
-                    <span className="text-slate-500 text-[10px] uppercase block">File Name</span>
-                    <span className="text-white font-sans truncate block">{inspectFile.originalFilename}</span>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">File Size</span>
+                    <span className="font-semibold text-slate-900">{(inspectFile.originalSize / 1024).toFixed(1)} KB</span>
                   </div>
-
-                  <div className="p-3 bg-[#070e1c] border border-[#141f36] rounded-xl space-y-1">
-                    <span className="text-slate-500 text-[10px] uppercase block">Size</span>
-                    <span className="text-slate-200">{(inspectFile.originalSize / (1024 * 1024)).toFixed(2)} MB</span>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">File Type</span>
+                    <span className="font-semibold text-slate-900 uppercase">{inspectFile.originalFilename.split('.').pop()}</span>
                   </div>
-
-                  <div className="p-3 bg-[#070e1c] border border-[#141f36] rounded-xl space-y-1">
-                    <span className="text-slate-500 text-[10px] uppercase block">Uploaded On</span>
-                    <span className="text-slate-200">{new Date(inspectFile.createdAt).toLocaleString()}</span>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">Uploaded By</span>
+                    <span className="font-semibold text-slate-900">{inspectFile.ownerEmail || 'You'}</span>
                   </div>
-
-                  <div className="sm:col-span-2 p-3 bg-[#070e1c] border border-[#141f36] rounded-xl space-y-1">
-                    <span className="text-slate-500 text-[10px] uppercase block">SHA-256 Hash</span>
-                    <span className="text-[#34d399] break-all select-all text-[11px]">{inspectFile.sha256Checksum}</span>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-500">Uploaded On</span>
+                    <span className="font-semibold text-slate-900">{new Date(inspectFile.createdAt).toLocaleString()}</span>
                   </div>
-
-                  <div className="p-3 bg-[#070e1c] border border-[#141f36] rounded-xl space-y-1">
-                    <span className="text-slate-500 text-[10px] uppercase block">Encryption</span>
-                    <span className="text-white">AES-256-GCM + Blowfish</span>
-                  </div>
-
-                  <div className="p-3 bg-[#070e1c] border border-[#141f36] rounded-xl space-y-1">
-                    <span className="text-slate-500 text-[10px] uppercase block">Key Protection</span>
-                    <span className="text-white">ECC + LSB Steganography</span>
-                  </div>
-
-                  <div className="p-3 bg-[#070e1c] border border-[#141f36] rounded-xl space-y-1">
-                    <span className="text-slate-500 text-[10px] uppercase block">Status</span>
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-[#10b981]/20 text-[#34d399] border border-[#10b981]/40">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Encrypted &amp; Verified
+                  <div className="py-1.5">
+                    <span className="text-slate-500 block mb-1">SHA-256 Hash</span>
+                    <span className="font-mono text-[11px] text-blue-600 break-all select-all bg-slate-50 p-2 rounded-lg block border border-slate-200">
+                      {inspectFile.sha256Checksum}
                     </span>
-                  </div>
-
-                  <div className="p-3 bg-[#070e1c] border border-[#141f36] rounded-xl space-y-1">
-                    <span className="text-slate-500 text-[10px] uppercase block">Owner</span>
-                    <span className="text-white font-sans">You ({inspectFile.ownerEmail})</span>
                   </div>
                 </div>
               )}
@@ -539,35 +576,34 @@ export const UserFiles: React.FC = () => {
               {detailTab === 'INTEGRITY' && (
                 <div className="space-y-4">
                   {integrityTesting ? (
-                    <div className="text-center py-8 font-mono text-slate-400 flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-[#10b981] border-t-transparent rounded-full animate-spin" />
+                    <div className="text-center py-8 text-slate-400 flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                       Computing constant-time SHA-256 digest comparison...
                     </div>
                   ) : integrityResult ? (
-                    <div className="space-y-3 font-mono">
-                      <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-between">
+                    <div className="space-y-3">
+                      <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-5 h-5 shrink-0" />
-                          <span className="font-semibold font-sans">Integrity Verified: Bit-for-Bit Checksum Match</span>
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                          <span className="font-semibold">Integrity Verified: Bit-for-Bit Checksum Match</span>
                         </div>
-                        <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-xs">VALID</span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">VALID</span>
                       </div>
-
-                      <div className="p-3 bg-[#070e1c] border border-[#141f36] rounded-xl space-y-2 text-[11px]">
+                      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-[11px] font-mono text-slate-600">
                         <div>
-                          <span className="text-slate-500 uppercase block text-[10px]">Expected Initial Hash:</span>
-                          <span className="text-cyan-400 break-all">{integrityResult.expectedSha256Checksum}</span>
+                          <span className="text-slate-400 block text-[10px] uppercase font-semibold">Expected Hash:</span>
+                          <span className="break-all">{integrityResult.expectedSha256Checksum}</span>
                         </div>
                         <div>
-                          <span className="text-slate-500 uppercase block text-[10px]">Calculated Decrypted Digest:</span>
-                          <span className="text-emerald-400 break-all">{integrityResult.calculatedSha256Checksum}</span>
+                          <span className="text-slate-400 block text-[10px] uppercase font-semibold">Calculated Digest:</span>
+                          <span className="text-emerald-600 break-all">{integrityResult.calculatedSha256Checksum}</span>
                         </div>
                       </div>
                     </div>
                   ) : (
                     <button
                       onClick={() => handleRunIntegrityCheck(inspectFile.id)}
-                      className="sec-btn-emerald w-full py-2.5 text-xs"
+                      className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold"
                     >
                       Run Integrity Test Now
                     </button>
@@ -576,16 +612,16 @@ export const UserFiles: React.FC = () => {
               )}
 
               {detailTab === 'SHARING' && (
-                <div className="text-center py-6 text-slate-400 space-y-3">
-                  <Share2 className="w-8 h-8 text-slate-600 mx-auto" />
-                  <p>You can grant access to this file to other registered users or create one-time links.</p>
+                <div className="text-center py-6 text-slate-500 space-y-3">
+                  <Share2 className="w-8 h-8 text-blue-600 mx-auto" />
+                  <p className="text-xs">You can share this file with other users or create secure links.</p>
                   <button
                     onClick={() => {
                       setShareFile(inspectFile);
                       setShareSuccess(null);
                       setGeneratedLinkToken(null);
                     }}
-                    className="sec-btn-emerald py-1.5 px-4 text-xs mx-auto"
+                    className="py-2 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold mx-auto"
                   >
                     Open Share Dialog
                   </button>
@@ -593,22 +629,22 @@ export const UserFiles: React.FC = () => {
               )}
 
               {detailTab === 'ACTIVITY' && (
-                <div className="space-y-2 font-mono text-slate-300">
-                  <div className="p-3 bg-[#070e1c] border border-[#141f36] rounded-xl flex items-center justify-between">
+                <div className="space-y-2 text-slate-700">
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
                     <div>
-                      <p className="font-sans font-medium text-white">File Upload &amp; 5-Layer Encrypt</p>
+                      <p className="font-semibold text-slate-900">File Upload &amp; 5-Layer Encrypt</p>
                       <p className="text-[10px] text-slate-500">{new Date(inspectFile.createdAt).toLocaleString()}</p>
                     </div>
-                    <span className="px-2 py-0.5 rounded bg-[#10b981]/15 text-[#34d399] text-[10px]">SUCCESS</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">SUCCESS</span>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="mt-6 pt-4 border-t border-[#141f36] flex justify-end">
+            <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => setInspectFile(null)}
-                className="sec-btn-glass py-1.5 px-4 text-xs"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold"
               >
                 Close Details
               </button>
@@ -617,150 +653,117 @@ export const UserFiles: React.FC = () => {
         </div>
       )}
 
-      {/* SCREEN 12: SHARE FILE MODAL */}
+      {/* SCREEN 9: SHARE FILE MODAL (matching Screen 9 from Design System) */}
       {shareFile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-md bg-[#0b1325] border border-[#1a2744] rounded-2xl shadow-2xl p-6 sm:p-7 relative text-slate-100">
-            <div className="flex items-center justify-between pb-4 border-b border-[#141f36]">
-              <h3 className="font-bold text-white text-base">
-                Share File: <span className="text-[#34d399]">{shareFile.originalFilename}</span>
-              </h3>
-              <button onClick={() => setShareFile(null)} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-xl p-6 sm:p-7 relative text-slate-800">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5 truncate">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <Share2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Share File</h3>
+                  <p className="text-[11px] text-slate-500 truncate">{shareFile.originalFilename}</p>
+                </div>
+              </div>
+              <button onClick={() => setShareFile(null)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Key Status Banner */}
-            {!privateKey ? (
-              <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-2.5 text-xs text-amber-300">
-                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <p className="font-semibold text-amber-200">Local Private Key Not Loaded</p>
-                  <p className="text-[11px] text-amber-300/80 leading-relaxed">
-                    Direct user sharing requires your NIST P-256 ECC Private Key to re-encrypt cryptographic envelopes. Open Keyring Settings in the top bar to load or generate your key.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4 p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2 text-xs text-emerald-300">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-[11px] font-mono">NIST P-256 ECC Keyring Active &amp; Ready</span>
-              </div>
-            )}
-
             <form onSubmit={handleCreateShare} className="mt-4 space-y-4 text-xs">
-              {/* Recipient Email matching Screen 12 */}
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Recipient (Email)</label>
+                <label className="block text-slate-700 font-semibold mb-1">Share with</label>
                 <input
                   type="email"
-                  placeholder="friend@example.com"
+                  required
+                  placeholder="name@example.com"
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
-                  className="sec-input"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white text-xs"
                 />
               </div>
 
-              {/* Permission dropdown matching Screen 12 */}
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Permission</label>
+                <label className="block text-slate-700 font-semibold mb-1">Permissions</label>
                 <select
                   value={permission}
                   onChange={(e) => setPermission(e.target.value as any)}
-                  className="sec-input"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-blue-600"
                 >
-                  <option value="DOWNLOAD">Download</option>
+                  <option value="DOWNLOAD">Download &bull; Full Access</option>
                   <option value="VIEW_ONLY">View Only</option>
                 </select>
               </div>
 
-              {/* Expiration Date matching Screen 12 */}
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Expiration Date</label>
-                <input
-                  type="date"
-                  value={expirationDate}
-                  onChange={(e) => setExpirationDate(e.target.value)}
-                  className="sec-input font-mono"
+                <label className="block text-slate-700 font-semibold mb-1">Message (optional)</label>
+                <textarea
+                  rows={2}
+                  placeholder="Add an encrypted note..."
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white text-xs resize-none"
                 />
               </div>
 
-              {/* Checkboxes matching Screen 12 */}
               <div className="space-y-2 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+                <label className="flex items-center gap-2 cursor-pointer text-slate-600">
                   <input
                     type="checkbox"
                     checked={oneTimeLink}
                     onChange={(e) => setOneTimeLink(e.target.checked)}
-                    className="w-4 h-4 rounded bg-[#070e1c] border-[#1a2744] text-[#10b981] focus:ring-0"
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
                   />
-                  <span>One-Time access link</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={sendEmailNotification}
-                    onChange={(e) => setSendEmailNotification(e.target.checked)}
-                    className="w-4 h-4 rounded bg-[#070e1c] border-[#1a2744] text-[#10b981] focus:ring-0"
-                  />
-                  <span>Send email notification</span>
+                  <span>Generate one-time download link</span>
                 </label>
               </div>
 
               {shareSuccess && (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs">
-                  {shareSuccess}
+                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{shareSuccess}</span>
                 </div>
               )}
 
               {generatedLinkToken && (
-                <div className="p-3.5 bg-[#070e1c] border border-emerald-500/40 rounded-xl space-y-2.5">
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono font-semibold text-emerald-400 uppercase tracking-wider">
-                      One-Time Access Link:
-                    </span>
-                    {copiedLink && (
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Copied!
-                      </span>
-                    )}
+                    <span className="font-semibold text-slate-800">Shared Link:</span>
+                    {copiedLink && <span className="text-emerald-600 font-medium">Copied!</span>}
                   </div>
-                  <div className="p-2.5 bg-[#0b1325] rounded-lg border border-[#1a2744] text-xs font-mono text-cyan-300 break-all select-all leading-relaxed">
+                  <div className="p-2 bg-white rounded-lg border border-slate-200 font-mono text-[11px] text-blue-600 break-all select-all">
                     {generatedLinkToken}
                   </div>
-                  <div className="flex items-center gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(generatedLinkToken);
-                        setCopiedLink(true);
-                        setTimeout(() => setCopiedLink(false), 2500);
-                      }}
-                      className="flex-1 sec-btn-emerald py-2 text-xs flex items-center justify-center gap-1.5"
-                    >
-                      <Copy className="w-3.5 h-3.5" /> {copiedLink ? 'Copied to Clipboard!' : 'Copy Full Link'}
-                    </button>
-                    <a
-                      href={generatedLinkToken}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="sec-btn-glass py-2 px-3 text-xs flex items-center justify-center gap-1.5 shrink-0 hover:border-emerald-500/40"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5 text-[#10b981]" /> Open Link
-                    </a>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedLinkToken);
+                      setCopiedLink(true);
+                      setTimeout(() => setCopiedLink(false), 2000);
+                    }}
+                    className="w-full py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Copy className="w-3.5 h-3.5" /> Copy Link
+                  </button>
                 </div>
               )}
 
-              {/* Green Create Share Button matching Screen 12 */}
-              <button
-                type="submit"
-                disabled={shareSubmitting}
-                className="w-full sec-btn-emerald py-3 text-slate-950 font-bold text-xs tracking-wide disabled:opacity-50 mt-2"
-              >
-                {shareSubmitting ? 'Securing...' : 'Create Share'}
-              </button>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={shareSubmitting}
+                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-sm text-xs disabled:opacity-50"
+                >
+                  {shareSubmitting ? 'Sharing...' : 'Share'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShareFile(null)}
+                  className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl font-semibold text-xs"
+                >
+                  Cancel
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -792,3 +795,4 @@ export const UserFiles: React.FC = () => {
     </div>
   );
 };
+

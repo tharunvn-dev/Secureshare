@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Lock, Mail, User, Shield, ArrowRight, AlertCircle, Server } from 'lucide-react';
+import { Shield, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { generateEccKeyPair, downloadFile } from '../../utils/crypto';
 import { api, getErrorMessage } from '../../api/client';
-import { TopFeatureBar } from '../../components/common/TopFeatureBar';
+import { signInWithGoogleOAuth } from '../../lib/supabase';
 
 export const RegisterPage: React.FC = () => {
   const { register, setPrivateKey } = useAuth();
@@ -14,12 +14,13 @@ export const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Warm up Render backend as soon as user opens register page
+  // Warm up backend
   useEffect(() => {
     api.get('/actuator/health').catch(() => {});
   }, []);
@@ -29,7 +30,7 @@ export const RegisterPage: React.FC = () => {
     setError(null);
 
     if (!agreedTerms) {
-      setError('Please agree to the Terms and Privacy Policy');
+      setError('Please agree to the Terms of Service and Privacy Policy');
       return;
     }
     if (password !== confirmPassword) {
@@ -44,47 +45,30 @@ export const RegisterPage: React.FC = () => {
     const trimmedEmail = email.trim().toLowerCase();
     const emailRegex = /^[a-zA-Z0-9_+&*-]+(?:\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
     if (!emailRegex.test(trimmedEmail)) {
-      setError('Please enter a valid, deliverable email address (e.g. yourname@gmail.com).');
-      return;
-    }
-
-    const domain = trimmedEmail.split('@')[1];
-    const disposableDomains = [
-      'tempmail.com', 'mailinator.com', '10minutemail.com', 'guerrillamail.com',
-      'throwawaymail.com', 'fakeinbox.com', 'yopmail.com', 'trashmail.com',
-      'getairmail.com', 'sharklasers.com', 'dispostable.com', 'maildrop.cc',
-      'crazymailing.com', 'mytemp.email', 'nada.ltd', 'temp-mail.org',
-      'fake-mail.net', 'dropmail.me', 'inboxkitten.com', 'burnermail.io',
-      'tempinbox.com', 'emailondeck.com', 'minuteinbox.com', 'generator.email'
-    ];
-    if (disposableDomains.includes(domain)) {
-      setError('Disposable or temporary email domains are not allowed. Please register with a real email address.');
+      setError('Please enter a valid email address (e.g. name@example.com).');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Split full name
       const parts = fullName.trim().split(' ');
       const firstName = parts[0] || 'User';
       const lastName = parts.slice(1).join(' ') || '';
 
       // 1. Generate client-side ECC P-256 Keypair
       const keyPair = await generateEccKeyPair();
-
-      // Save private key locally in browser session
       setPrivateKey(keyPair.privateKeyBase64);
 
-      // Automatically trigger offline backup download
+      // Download backup key
       const backupText = `-----BEGIN EC PRIVATE KEY (NIST P-256)-----\n${keyPair.privateKeyBase64}\n-----END EC PRIVATE KEY-----`;
-      downloadFile(backupText, `${email.trim()}_ecc_private.key`);
+      downloadFile(backupText, `${trimmedEmail}_ecc_private.key`);
 
-      // 2. Call backend register API with public key
-      const registeredUser = await register(email.trim(), password, firstName, lastName, keyPair.publicKeyBase64);
+      // 2. Call backend register API
+      const registeredUser = await register(trimmedEmail, password, firstName, lastName, keyPair.publicKeyBase64);
 
-      // 3. Navigate to dedicated 6-digit OTP email verification page (/verify-email)
-      navigate(`/verify-email?email=${encodeURIComponent(email.trim())}`, {
+      // 3. Navigate to OTP verification page (Screen 4)
+      navigate(`/verify-email?email=${encodeURIComponent(trimmedEmail)}`, {
         state: { devOtp: (registeredUser as any)?.devOtp },
       });
     } catch (err) {
@@ -95,148 +79,116 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#060b14] flex flex-col font-sans selection:bg-[#10b981]/30 selection:text-[#34d399]">
-      <TopFeatureBar />
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col justify-center items-center p-6 font-sans relative selection:bg-blue-600 selection:text-white">
+      {/* Brand Header */}
+      <div className="flex items-center gap-2.5 mb-8">
+        <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
+          <Shield className="w-5 h-5" />
+        </div>
+        <span className="font-bold text-xl text-slate-900 tracking-tight">SecureStorage</span>
+      </div>
 
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-4xl bg-[#0b1325] border border-[#1a2744] rounded-2xl shadow-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2 relative">
-          {/* Left Form Column */}
-          <div className="p-8 sm:p-10 flex flex-col justify-center">
-            {/* Header */}
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 rounded-md bg-[#10b981]/20 border border-[#10b981]/50 flex items-center justify-center text-[#10b981]">
-                  <Lock className="w-3.5 h-3.5" />
-                </div>
-                <span className="font-bold text-sm text-white tracking-wider">SecureShare</span>
-              </div>
-              <h2 className="text-2xl font-bold text-white tracking-tight">Create Your Account</h2>
-              <p className="text-xs text-slate-400 mt-1">Join securely with email verification</p>
-            </div>
+      {/* Main Card (matching Screen 3 from Design System) */}
+      <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-2xl shadow-sm p-8 sm:p-10 relative">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Create Your Account</h2>
+          <p className="text-xs text-slate-500 mt-1">Join SecureStorage and keep your files safe</p>
+        </div>
 
-            {error && (
-              <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
+        {error && (
+          <div className="mb-6 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
 
-            <form onSubmit={handleRegister} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Full Name</label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    required
-                    placeholder="John Doe"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="sec-input pl-9"
-                  />
-                </div>
-              </div>
+        <form onSubmit={handleRegister} className="space-y-4 text-xs">
+          <div>
+            <label className="block text-slate-700 font-semibold mb-1.5">Full name</label>
+            <input
+              type="text"
+              required
+              placeholder="John Doe"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all text-xs"
+            />
+          </div>
 
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Email Address</label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="sec-input pl-9"
-                  />
-                </div>
-              </div>
+          <div>
+            <label className="block text-slate-700 font-semibold mb-1.5">Email address</label>
+            <input
+              type="email"
+              required
+              placeholder="john@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all text-xs"
+            />
+          </div>
 
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Password</label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="sec-input pl-9"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Confirm Password</label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="sec-input pl-9"
-                  />
-                </div>
-              </div>
-
-              {/* Terms Checkbox */}
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="termsCheck"
-                  checked={agreedTerms}
-                  onChange={(e) => setAgreedTerms(e.target.checked)}
-                  className="w-4 h-4 rounded bg-[#070e1c] border-[#1a2744] text-[#10b981] focus:ring-0 focus:ring-offset-0"
-                />
-                <label htmlFor="termsCheck" className="text-slate-400 text-[11px] cursor-pointer">
-                  I agree to the <span className="text-[#10b981] hover:underline">Terms</span> and{' '}
-                  <span className="text-[#10b981] hover:underline">Privacy Policy</span>
-                </label>
-              </div>
-
-              {/* Submit Button */}
+          <div>
+            <label className="block text-slate-700 font-semibold mb-1.5">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                placeholder="Create a strong password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all text-xs pr-10"
+              />
               <button
-                type="submit"
-                disabled={loading}
-                className="w-full mt-2 sec-btn-emerald py-3 text-slate-950 font-bold tracking-wide disabled:opacity-50"
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
               >
-                {loading ? (
-                  <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  'Register'
-                )}
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
-            </form>
-
-            <div className="mt-6 text-center text-xs text-slate-400">
-              Already have an account?{' '}
-              <Link to="/login" className="text-[#10b981] font-semibold hover:underline">
-                Login
-              </Link>
             </div>
           </div>
 
-          {/* Right Visual Art Column matching Screen 2 */}
-          <div className="hidden md:flex flex-col items-center justify-center p-8 bg-gradient-to-br from-[#0c162b] to-[#070d18] border-l border-[#1a2744] relative overflow-hidden text-center">
-            <div className="w-48 h-48 rounded-full bg-[#10b981]/10 blur-2xl absolute" />
-            
-            {/* 3D Server Stack / Glowing Art */}
-            <div className="relative z-10 space-y-4">
-              <div className="w-24 h-24 mx-auto rounded-2xl bg-[#0e1c36] border border-[#10b981]/40 flex items-center justify-center text-[#10b981] shadow-[0_0_30px_rgba(16,185,129,0.25)]">
-                <Server className="w-12 h-12" />
-              </div>
-              <h3 className="text-lg font-bold text-white tracking-wide">Client-Side ECC Generation</h3>
-              <p className="text-xs text-slate-400 max-w-xs leading-relaxed font-sans">
-                A 256-bit NIST P-256 keypair is generated directly in your browser. Your private key stays on your device.
-              </p>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#10b981]/15 text-[#34d399] text-[11px] font-mono border border-[#10b981]/30">
-                <Shield className="w-3.5 h-3.5" /> Zero-Knowledge Setup
-              </div>
-            </div>
+          <div>
+            <label className="block text-slate-700 font-semibold mb-1.5">Confirm Password</label>
+            <input
+              type="password"
+              required
+              placeholder="Confirm your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all text-xs"
+            />
           </div>
+
+          <div className="flex items-start pt-1">
+            <input
+              id="terms"
+              type="checkbox"
+              required
+              checked={agreedTerms}
+              onChange={(e) => setAgreedTerms(e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 mt-0.5"
+            />
+            <label htmlFor="terms" className="ml-2 text-xs text-slate-600 leading-tight select-none">
+              I agree to the <span className="text-blue-600 font-medium">Terms of Service</span> and{' '}
+              <span className="text-blue-600 font-medium">Privacy Policy</span>
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl shadow-sm shadow-blue-500/25 transition-all text-xs disabled:opacity-50 mt-2"
+          >
+            {loading ? 'Creating Account...' : 'Register'}
+          </button>
+        </form>
+
+        <div className="text-center mt-6 text-xs text-slate-500">
+          Already have an account?{' '}
+          <Link to="/login" className="text-blue-600 font-semibold hover:underline">
+            Login
+          </Link>
         </div>
       </div>
     </div>

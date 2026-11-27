@@ -211,6 +211,30 @@ public class FileShareService {
         );
     }
 
+    @Transactional
+    public void deleteSharePermanently(UUID shareId, User user, HttpServletRequest request) {
+        FileShare share = shareRepository.findByIdAndDeletedFlagFalse(shareId)
+                .orElseThrow(() -> new ResourceNotFoundException("Share not found: " + shareId));
+
+        if (!share.getOwner().getId().equals(user.getId()) && !share.getRecipient().getId().equals(user.getId())) {
+            throw new ForbiddenException("Only the share creator or recipient can dismiss this share.");
+        }
+
+        share.setDeletedFlag(true);
+        share.setUpdatedAt(Instant.now());
+        shareRepository.save(share);
+
+        auditLogService.logEvent(
+                user,
+                "SHARE_DISMISSED",
+                "SHARE",
+                shareId.toString(),
+                "SUCCESS",
+                String.format("Dismissed share record for file '%s'", share.getFile().getOriginalFilename()),
+                request
+        );
+    }
+
     private FileShareResponse mapToShareResponse(FileShare share) {
         FileShareResponse resp = new FileShareResponse();
         resp.setId(share.getId());

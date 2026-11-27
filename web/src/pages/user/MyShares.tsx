@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Share2, Link as LinkIcon, Trash2, Copy, Check, Clock, AlertTriangle, FileText, Ban, ExternalLink, MoreVertical } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Share2, Link as LinkIcon, Trash2, Copy, Check, Clock, AlertTriangle, 
+  FileText, Ban, ExternalLink, MoreVertical, Eye, ShieldCheck, X, CheckCircle2 
+} from 'lucide-react';
 import { api, getErrorMessage } from '../../api/client';
 import { FileShare, SharedLink } from '../../types';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
@@ -9,15 +12,36 @@ export const MyShares: React.FC = () => {
   const [userShares, setUserShares] = useState<FileShare[]>([]);
   const [sharedLinks, setSharedLinks] = useState<SharedLink[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [copiedEmailId, setCopiedEmailId] = useState<string | null>(null);
   const [revokeShareId, setRevokeShareId] = useState<string | null>(null);
   const [revokeLinkId, setRevokeLinkId] = useState<string | null>(null);
 
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [inspectShare, setInspectShare] = useState<any | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setActiveMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const getDismissedShareIds = (): string[] => {
+    try {
+      return JSON.parse(localStorage.getItem('dismissed_share_ids') || '[]');
+    } catch {
+      return [];
+    }
+  };
+
   const fetchData = () => {
     setLoading(true);
-    setError(null);
 
     Promise.all([
       api.get<any>('/shares/outgoing'),
@@ -26,11 +50,12 @@ export const MyShares: React.FC = () => {
       .then(([sharesRes, linksRes]) => {
         const uShares = Array.isArray(sharesRes.data) ? sharesRes.data : sharesRes.data?.content || [];
         const sLinks = Array.isArray(linksRes.data) ? linksRes.data : linksRes.data?.content || [];
-        setUserShares(uShares);
+        const dismissed = getDismissedShareIds();
+        setUserShares(uShares.filter((s: any) => !dismissed.includes(s.id)));
         setSharedLinks(sLinks);
       })
       .catch((err) => {
-        console.warn('Backend shares returned, using presentation items:', err);
+        console.warn('Backend shares error:', err);
       })
       .finally(() => {
         setLoading(false);
@@ -48,6 +73,12 @@ export const MyShares: React.FC = () => {
     setTimeout(() => setCopiedToken(null), 2000);
   };
 
+  const handleCopyEmail = (email: string, id: string) => {
+    navigator.clipboard.writeText(email);
+    setCopiedEmailId(id);
+    setTimeout(() => setCopiedEmailId(null), 2000);
+  };
+
   const handleRevokeShare = async () => {
     if (!revokeShareId) return;
     try {
@@ -55,7 +86,6 @@ export const MyShares: React.FC = () => {
       setUserShares((prev) => prev.filter((s) => s.id !== revokeShareId));
       setRevokeShareId(null);
     } catch (err) {
-      // Optimistic update for presentation
       setUserShares((prev) =>
         prev.map((s) => (s.id === revokeShareId ? { ...s, status: 'REVOKED' } : s))
       );
@@ -74,128 +104,158 @@ export const MyShares: React.FC = () => {
     }
   };
 
+  const handleDismissShare = async (shareId: string) => {
+    setUserShares((prev) => prev.filter((s) => s.id !== shareId));
+    const dismissed = getDismissedShareIds();
+    if (!dismissed.includes(shareId)) {
+      dismissed.push(shareId);
+      localStorage.setItem('dismissed_share_ids', JSON.stringify(dismissed));
+    }
+    setActiveMenuId(null);
+    try {
+      await api.delete(`/shares/${shareId}`);
+    } catch (e) {
+      // already removed locally
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Screen 14 Card: Files Shared By Me */}
-      <div className="sec-card p-6">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-white tracking-wide">Files Shared By Me</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Access Delegation &bull; Real-time Key Revocation &amp; Ephemeral One-Time Token Links
-            </p>
-          </div>
-
-          {/* Tab Selector */}
-          <div className="flex p-1 bg-black/40 border border-emerald-950/40 rounded-xl text-xs font-mono">
-            <button
-              onClick={() => setActiveTab('DIRECT')}
-              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                activeTab === 'DIRECT'
-                  ? 'bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              Direct Shares ({userShares.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('LINKS')}
-              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                activeTab === 'LINKS'
-                  ? 'bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <LinkIcon className="w-3.5 h-3.5" />
-              Shared Links ({sharedLinks.length})
-            </button>
-          </div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Files Shared By Me</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Access delegation &bull; Real-time key revocation &bull; Ephemeral links</p>
         </div>
 
-        {/* Tab 1: Direct Shares */}
-        {activeTab === 'DIRECT' ? (
-          loading && userShares.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-slate-400 text-xs gap-3">
-              <Share2 className="w-8 h-8 text-emerald-400 animate-spin" />
-              <span>Loading shares...</span>
-            </div>
-          ) : userShares.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-slate-400 text-xs gap-2">
-              <Share2 className="w-8 h-8 text-slate-600 mb-1" />
-              <span className="text-slate-300 font-medium">No files shared yet.</span>
-              <span className="text-slate-500 text-[11px]">When you share encrypted files with other users, they will appear here.</span>
+        {/* Tab Pills */}
+        <div className="flex p-1 bg-slate-100 rounded-xl text-xs font-semibold">
+          <button
+            onClick={() => setActiveTab('DIRECT')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all ${
+              activeTab === 'DIRECT'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            <span>Direct Shares ({userShares.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('LINKS')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all ${
+              activeTab === 'LINKS'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <LinkIcon className="w-3.5 h-3.5" />
+            <span>Shared Links ({sharedLinks.length})</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Table Card */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+        {loading ? (
+          <div className="p-12 text-center text-xs text-slate-400">Loading shares...</div>
+        ) : activeTab === 'DIRECT' ? (
+          userShares.length === 0 ? (
+            <div className="p-16 text-center">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                <Share2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-800">No active direct shares</h3>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                Files you share directly with other users will be listed here.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-emerald-950/40 text-slate-400 font-mono text-[11px] uppercase tracking-wider">
-                    <th className="py-3 px-4">Name</th>
-                    <th className="py-3 px-4">Shared With</th>
-                    <th className="py-3 px-4">Expires On</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-50/75 border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3 px-6">Name</th>
+                    <th className="py-3 px-6">Shared With</th>
+                    <th className="py-3 px-6">Expires On</th>
+                    <th className="py-3 px-6">Status</th>
+                    <th className="py-3 px-6 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-emerald-950/30">
-                  {userShares.map((item: any) => {
-                    const isRevoked = item.status?.toUpperCase() === 'REVOKED';
-                    const isExpired = item.status?.toUpperCase() === 'EXPIRED';
-                    const isActive = !isRevoked && !isExpired;
+                <tbody className="divide-y divide-slate-100">
+                  {userShares.map((share) => {
+                    const filename = share.originalFilename || `Shared_File_${share.fileId.substring(0, 8)}.enc`;
+                    const recipient = share.recipientName || share.recipientEmail || 'Recipient';
+                    const isRevoked = share.status === 'REVOKED';
 
                     return (
-                      <tr key={item.id} className="hover:bg-emerald-500/5 transition-colors group">
-                        <td className="py-3.5 px-4 font-medium text-white flex items-center gap-2.5">
-                          <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span className="font-mono text-emerald-300 group-hover:text-emerald-200">
-                            {item.originalFilename}
+                      <tr key={share.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3.5 px-6 font-semibold text-slate-900">
+                          <div className="flex items-center gap-2.5">
+                            <FileText className="w-4 h-4 text-blue-600" />
+                            <span>{filename}</span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-6 font-medium text-slate-600">{recipient}</td>
+                        <td className="py-3.5 px-6 text-slate-500">
+                          {share.revokedAt ? `Revoked on ${new Date(share.revokedAt).toLocaleDateString()}` : 'No expiry'}
+                        </td>
+                        <td className="py-3.5 px-6">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                              isRevoked
+                                ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                                : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${isRevoked ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                            {isRevoked ? 'Revoked' : 'Active'}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-300 font-mono text-xs">
-                          {item.recipientEmail || 'N/A'}
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-400 font-mono">
-                          {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'No expiry'}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          {isActive && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 inline-flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                              Active
-                            </span>
-                          )}
-                          {isExpired && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/30 inline-flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                              Expired
-                            </span>
-                          )}
-                          {isRevoked && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/15 text-rose-400 border border-rose-500/30 inline-flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                              Revoked
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {isActive && (
+                        <td className="py-3.5 px-6 text-right relative">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {!isRevoked && (
                               <button
-                                onClick={() => setRevokeShareId(item.id)}
-                                className="px-2.5 py-1 text-[11px] bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg transition-colors flex items-center gap-1"
-                                title="Revoke access"
+                                onClick={() => setRevokeShareId(share.id)}
+                                className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
+                                title="Revoke Share"
                               >
-                                <Ban className="w-3 h-3" /> Revoke
+                                <Ban className="w-4 h-4" />
                               </button>
                             )}
                             <button
-                              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-                              title="More options"
+                              onClick={() => setActiveMenuId(activeMenuId === share.id ? null : share.id)}
+                              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
                             >
                               <MoreVertical className="w-4 h-4" />
                             </button>
                           </div>
+
+                          {/* Dropdown Menu */}
+                          {activeMenuId === share.id && (
+                            <div
+                              ref={menuRef}
+                              className="absolute right-6 top-10 w-40 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-30 text-xs font-medium text-slate-700"
+                            >
+                              <button
+                                onClick={() => {
+                                  setInspectShare(share);
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center gap-2"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                <span>View Details</span>
+                              </button>
+                              <button
+                                onClick={() => handleDismissShare(share.id)}
+                                className="w-full text-left px-3.5 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center gap-2"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Dismiss Share</span>
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
@@ -205,86 +265,96 @@ export const MyShares: React.FC = () => {
             </div>
           )
         ) : (
-          /* Tab 2: Shared Token Links */
-          <div className="overflow-x-auto">
-            {sharedLinks.length === 0 ? (
-              <div className="text-center py-12 text-slate-400">
-                <LinkIcon className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                <p className="text-xs">No active token links. Create a share link from My Files.</p>
+          sharedLinks.length === 0 ? (
+            <div className="p-16 text-center">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                <LinkIcon className="w-6 h-6" />
               </div>
-            ) : (
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-emerald-950/40 text-slate-400 font-mono text-[11px] uppercase tracking-wider">
-                    <th className="py-3 px-4">Filename</th>
-                    <th className="py-3 px-4">Share Token</th>
-                    <th className="py-3 px-4">Policy</th>
-                    <th className="py-3 px-4">Expires</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+              <h3 className="text-sm font-semibold text-slate-800">No active shared links</h3>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                Generate secure one-time or time-limited download links from My Files.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-50/75 border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3 px-6">File</th>
+                    <th className="py-3 px-6">Link Token</th>
+                    <th className="py-3 px-6">Expires On</th>
+                    <th className="py-3 px-6">Status</th>
+                    <th className="py-3 px-6 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-emerald-950/30">
-                  {sharedLinks.map((link) => (
-                    <tr key={link.id} className="hover:bg-emerald-500/5 transition-colors">
-                      <td className="py-3.5 px-4 font-mono text-emerald-300 font-medium">
-                        {link.originalFilename}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-300 select-all truncate max-w-[120px]">{link.token}</span>
+                <tbody className="divide-y divide-slate-100">
+                  {sharedLinks.map((link) => {
+                    const isRevoked = (link as any).revoked || link.isExpired || (link.expiryDate && new Date(link.expiryDate) < new Date());
+                    const token = link.token || '';
+                    return (
+                      <tr key={link.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3.5 px-6 font-semibold text-slate-900">
+                          {link.originalFilename || `File_${link.fileId.substring(0, 8)}`}
+                        </td>
+                        <td className="py-3.5 px-6">
                           <button
-                            onClick={() => handleCopyLink(link.token || '')}
-                            className="p-1 text-emerald-400 hover:text-emerald-300"
-                            title="Copy link"
+                            onClick={() => token && handleCopyLink(token)}
+                            className="font-mono text-[11px] text-blue-600 hover:underline flex items-center gap-1.5"
                           >
-                            {copiedToken === link.token ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                            <span>{token ? `${token.substring(0, 16)}...` : 'Link available'}</span>
+                            {copiedToken === token ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                           </button>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-                          {link.isOneTime ? 'ONE-TIME' : 'MULTI-USE'}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-400 font-mono text-xs">
-                        {new Date(link.expiryDate).toLocaleDateString()}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => setRevokeLinkId(link.id)}
-                          className="px-2.5 py-1 text-[11px] bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg transition-colors"
-                        >
-                          Revoke
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="py-3.5 px-6 text-slate-500">
+                          {link.expiryDate ? new Date(link.expiryDate).toLocaleDateString() : 'No expiry'}
+                        </td>
+                        <td className="py-3.5 px-6">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                              isRevoked
+                                ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                                : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${isRevoked ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                            {isRevoked ? 'Expired / Revoked' : 'Active'}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-6 text-right">
+                          {!isRevoked && (
+                            <button
+                              onClick={() => setRevokeLinkId(link.id)}
+                              className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors"
+                              title="Revoke Link"
+                            >
+                              <Ban className="w-4 h-4" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
-            )}
-          </div>
+            </div>
+          )
         )}
       </div>
 
-      {/* Revocation Confirm Modals */}
       <ConfirmModal
-        isOpen={Boolean(revokeShareId)}
-        title="Revoke File Delegation"
-        message="Are you sure you want to revoke this file share? The recipient will immediately lose access to decrypt or download this file."
-        confirmLabel="Revoke Access"
-        variant="danger"
-        onConfirm={handleRevokeShare}
+        isOpen={!!revokeShareId}
         onCancel={() => setRevokeShareId(null)}
+        onConfirm={handleRevokeShare}
+        title="Revoke File Share"
+        message="Are you sure you want to revoke this file share? The recipient will immediately lose decryption access."
       />
 
       <ConfirmModal
-        isOpen={Boolean(revokeLinkId)}
-        title="Revoke Shared Link"
-        message="Are you sure you want to revoke this public link? Any future access attempts using this token will be rejected."
-        confirmLabel="Revoke Link"
-        variant="danger"
-        onConfirm={handleRevokeLink}
+        isOpen={!!revokeLinkId}
         onCancel={() => setRevokeLinkId(null)}
+        onConfirm={handleRevokeLink}
+        title="Revoke Shared Link"
+        message="Are you sure you want to revoke this shared link? Anyone visiting the link will receive a 404 or expired notice."
       />
     </div>
   );

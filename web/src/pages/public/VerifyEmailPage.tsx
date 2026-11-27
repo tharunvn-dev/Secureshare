@@ -1,18 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { Mail, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { Shield, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api, getErrorMessage } from '../../api/client';
-import { TopFeatureBar } from '../../components/common/TopFeatureBar';
 
 export const VerifyEmailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const location = useLocation();
   const navigate = useNavigate();
   const { verifyEmail } = useAuth();
 
-  const emailParam = searchParams.get('email') || 'yourname@example.com';
-  const devOtp = (location.state as any)?.devOtp;
+  const emailParam = searchParams.get('email') || 'john@example.com';
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +19,6 @@ export const VerifyEmailPage: React.FC = () => {
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // 45-second countdown timer
   useEffect(() => {
     if (resendTimer <= 0) return;
     const interval = setInterval(() => {
@@ -37,7 +33,6 @@ export const VerifyEmailPage: React.FC = () => {
     newDigits[index] = val ? val[val.length - 1] : '';
     setDigits(newDigits);
 
-    // Auto-advance to next input
     if (val && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -65,7 +60,7 @@ export const VerifyEmailPage: React.FC = () => {
     e.preventDefault();
     const otpCode = digits.join('');
     if (otpCode.length < 6) {
-      setError('Please enter all 6 digits of the OTP');
+      setError('Please enter all 6 digits of the verification code.');
       return;
     }
 
@@ -92,7 +87,7 @@ export const VerifyEmailPage: React.FC = () => {
         purpose: 'REGISTRATION_VERIFICATION',
       });
       setResendSuccess(true);
-      setResendTimer(60);
+      setResendTimer(45);
       setTimeout(() => setResendSuccess(false), 4000);
     } catch (err) {
       setError(getErrorMessage(err));
@@ -102,122 +97,88 @@ export const VerifyEmailPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#060b14] flex flex-col font-sans selection:bg-[#10b981]/30 selection:text-[#34d399]">
-      <TopFeatureBar />
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col justify-center items-center p-6 font-sans relative selection:bg-blue-600 selection:text-white">
+      {/* Brand Header */}
+      <div className="flex items-center gap-2.5 mb-8">
+        <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
+          <Shield className="w-5 h-5" />
+        </div>
+        <span className="font-bold text-xl text-slate-900 tracking-tight">SecureStorage</span>
+      </div>
 
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md bg-[#0b1325] border border-[#1a2744] rounded-2xl p-8 shadow-2xl relative text-center">
-          {/* Glowing Green Mail Icon */}
-          <div className="w-16 h-16 mx-auto rounded-full bg-[#10b981]/15 border border-[#10b981]/40 flex items-center justify-center text-[#10b981] shadow-[0_0_20px_rgba(16,185,129,0.3)] mb-4">
-            <Mail className="w-8 h-8" />
+      {/* Main Card (matching Screen 4 from Design System) */}
+      <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-2xl shadow-sm p-8 sm:p-10 relative">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Verify Your Email</h2>
+          <p className="text-xs text-slate-500 mt-1">
+            We've sent a 6-digit verification code to <br />
+            <span className="font-semibold text-slate-800">{emailParam}</span>
+          </p>
+        </div>
+
+        {error && (
+          <div className="mb-6 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {resendSuccess && (
+          <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs text-center">
+            New 6-digit verification code dispatched to your inbox!
+          </div>
+        )}
+
+        <form onSubmit={handleVerify} className="space-y-6">
+          <div className="flex justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
+            {digits.map((digit, idx) => (
+              <input
+                key={idx}
+                ref={(el) => (inputRefs.current[idx] = el)}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleDigitChange(idx, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(idx, e)}
+                className="w-11 h-13 sm:w-12 sm:h-14 text-center font-bold text-xl rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+              />
+            ))}
           </div>
 
-          <h2 className="text-2xl font-bold text-white tracking-tight">Verify Your Email</h2>
-          <p className="text-xs text-slate-300 mt-2 max-w-xs mx-auto leading-relaxed">
-            We have sent a 6-digit OTP to <br />
-            <strong className="text-white font-mono">{emailParam}</strong>
-          </p>
-
-          {devOtp && (
-            <div className="mt-3 p-2.5 rounded-lg bg-[#10b981]/15 border border-[#10b981]/40 text-[#10b981] text-xs flex items-center justify-between">
-              <span className="font-mono font-bold tracking-widest text-sm">Code: {devOtp}</span>
-              <button
-                type="button"
-                onClick={() => setDigits(devOtp.split('').slice(0, 6))}
-                className="px-2.5 py-1 rounded bg-[#10b981] text-slate-950 font-bold hover:bg-[#34d399] transition text-[11px]"
-              >
-                Auto-Fill
-              </button>
-            </div>
-          )}
-
-          {error && (
-            <div className="mt-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2 text-left">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {resendSuccess && (
-            <div className="mt-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2 text-left">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-              <span>New 6-digit OTP dispatched to your inbox!</span>
-            </div>
-          )}
-
-          {/* 6 Digit Input Boxes matching Screen 3 */}
-          <form onSubmit={handleVerify} className="mt-6 space-y-6">
-            <div className="flex justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
-              {digits.map((digit, idx) => (
-                <input
-                  key={idx}
-                  ref={(el) => (inputRefs.current[idx] = el)}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleDigitChange(idx, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(idx, e)}
-                  className="otp-box"
-                />
-              ))}
-            </div>
-
-            {/* Verify OTP Button */}
-            <button
-              type="submit"
-              disabled={loading || digits.join('').length < 6}
-              className="w-full sec-btn-emerald py-3 text-slate-950 font-bold tracking-wide disabled:opacity-50"
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                'Verify OTP'
-              )}
-            </button>
-          </form>
-
-          {/* Resend Countdown & Link */}
-          <div className="mt-6 text-xs text-slate-400 space-y-1">
-            <p>
-              Resend OTP in{' '}
-              <span className="font-mono text-[#34d399]">
-                00:{resendTimer < 10 ? `0${resendTimer}` : resendTimer}
-              </span>
-            </p>
-            {resendTimer === 0 ? (
+          <div className="text-center text-xs text-slate-500">
+            Didn't receive the code?{' '}
+            {resendTimer > 0 ? (
+              <span className="text-slate-400 font-medium">Resend (00:{resendTimer < 10 ? `0${resendTimer}` : resendTimer})</span>
+            ) : (
               <button
                 type="button"
                 onClick={handleResendOtp}
                 disabled={resending}
-                className="text-[#10b981] font-semibold hover:underline"
+                className="text-blue-600 font-semibold hover:underline"
               >
-                {resending ? 'Sending...' : 'Resend OTP'}
+                Resend Code
               </button>
-            ) : (
-              <span className="text-slate-600 cursor-not-allowed">Resend OTP</span>
             )}
           </div>
 
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={() => {
-                const code = devOtp || '123456';
-                setDigits(code.split('').slice(0, 6));
-              }}
-              className="text-[11px] text-[#34d399]/70 hover:text-[#34d399] transition underline decoration-dotted"
-            >
-              Didn't receive email? Click to auto-fill code
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl shadow-sm shadow-blue-500/25 transition-all text-xs disabled:opacity-50"
+          >
+            {loading ? 'Verifying...' : 'Verify'}
+          </button>
 
-          <div className="mt-6 pt-4 border-t border-[#141f36]">
-            <Link to="/register" className="text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1.5">
-              <ArrowLeft className="w-3.5 h-3.5" /> Back to Registration
+          <div className="text-center">
+            <Link
+              to="/login"
+              className="text-xs text-slate-500 hover:text-slate-800 font-medium inline-flex items-center gap-1.5"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to Login
             </Link>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

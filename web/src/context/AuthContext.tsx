@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api, getErrorMessage } from '../api/client';
 import { User, LoginResponse } from '../types';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -15,6 +16,8 @@ interface AuthContextType {
   register: (email: string, password: string, firstName?: string, lastName?: string, publicKeyEcc?: string) => Promise<User>;
   verifyEmail: (email: string, otpCode: string) => Promise<User>;
   loginWithGoogle: (idToken: string, publicKeyEcc?: string) => Promise<User>;
+  loginWithSupabase: (accessToken: string, publicKeyEcc?: string) => Promise<User>;
+  isSupabaseEnabled: boolean;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -180,6 +183,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     throw new Error('Google authentication failed');
   };
 
+  const loginWithSupabase = async (accessToken: string, publicKeyEcc?: string): Promise<User> => {
+    const res = await api.post<LoginResponse>('/auth/supabase', {
+      accessToken,
+      publicKeyEcc,
+    });
+    if (res.data.accessToken && res.data.user) {
+      setToken(res.data.accessToken);
+      setUser(res.data.user);
+      localStorage.setItem('token', res.data.accessToken);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      return res.data.user;
+    }
+    throw new Error('Supabase authentication failed');
+  };
+
+  // Listen for Supabase session after OAuth redirect (Google Sign-In)
+  useEffect(() => {
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.access_token) {
+          loginWithSupabase(session.access_token).catch((err) => {
+            console.warn('Initial Supabase session sync note:', err.message);
+          });
+        }
+      });
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.access_token) {
+          try {
+            await loginWithSupabase(session.access_token);
+          } catch (err) {
+            console.error('Failed to sync onAuthStateChange:', err);
+          }
+        }
+      });
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, []);
+
   const logout = async () => {
     try {
       await api.post('/auth/logout');
@@ -212,6 +257,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         verifyEmail,
         loginWithGoogle,
+        loginWithSupabase,
+        isSupabaseEnabled: isSupabaseConfigured,
         logout,
         refreshUser,
       }}

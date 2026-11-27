@@ -9,8 +9,8 @@
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
-    <name>SecureShare Root Project</name>
-    <description>Root Aggregator for SecureShare Framework</description>
+    <name>SecureVault Root Project</name>
+    <description>Root Aggregator for SecureVault Framework</description>
 
     <modules>
         <module>backend</module>

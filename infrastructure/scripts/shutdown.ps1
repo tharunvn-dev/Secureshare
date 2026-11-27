@@ -3,7 +3,7 @@
 # ==============================================================================
 
 Write-Host "==================================================================" -ForegroundColor Yellow
-Write-Host "  Shutting down SecureShare Framework Services..." -ForegroundColor Yellow
+Write-Host "  Shutting down SecureVault Framework Services..." -ForegroundColor Yellow
 Write-Host "==================================================================" -ForegroundColor Yellow
 
 # 1. Stop process listening on port 8080 (Spring Boot)

@@ -139,127 +139,137 @@ export const AdminFiles: React.FC = () => {
     <div className="space-y-6">
       {/* Toast Notifications */}
       {successMsg && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 shrink-0" />
-            <span>{successMsg}</span>
+            <Check className="w-4 h-4 shrink-0 text-emerald-600" />
+            <span className="font-medium">{successMsg}</span>
           </div>
-          <button onClick={() => setSuccessMsg(null)}>
+          <button onClick={() => setSuccessMsg(null)} className="text-emerald-600 hover:text-emerald-800">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{errorMsg}</span>
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+            <span className="font-medium">{errorMsg}</span>
           </div>
-          <button onClick={() => setErrorMsg(null)}>
+          <button onClick={() => setErrorMsg(null)} className="text-rose-600 hover:text-rose-800">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Main Files Oversight Card */}
-      <div className="sec-card p-6">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-white tracking-wide">File &amp; Share Management</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Zero-Trust Encrypted Storage Oversight &bull; Plaintext Remains Isolated at Client
-            </p>
-          </div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">File &amp; Share Management</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Zero-Trust Encrypted Storage Oversight &bull; Plaintext Remains Isolated at Client
+          </p>
+        </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
-            {/* Tabs: All Files & Shared Files */}
-            <div className="flex p-1 bg-black/40 border border-emerald-950/40 rounded-xl text-xs font-mono">
-              <button
-                onClick={() => setActiveTab('ALL_FILES')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  activeTab === 'ALL_FILES'
-                    ? 'bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                All Files ({files.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('SHARED_FILES')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  activeTab === 'SHARED_FILES'
-                    ? 'bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Shared Files ({shares.length})
-              </button>
-            </div>
-
-            {/* Refresh Button */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+          {/* Tabs: All Files & Shared Files */}
+          <div className="flex p-1 bg-slate-100 rounded-xl text-xs font-semibold">
             <button
-              onClick={fetchFiles}
-              disabled={loading}
-              className="p-2 rounded-xl bg-black/40 border border-emerald-950/50 text-slate-400 hover:text-white hover:border-emerald-500/50 transition-colors"
-              title="Refresh Files"
+              onClick={() => setActiveTab('ALL_FILES')}
+              className={`px-3.5 py-1.5 rounded-lg transition-all ${
+                activeTab === 'ALL_FILES'
+                  ? 'bg-white text-blue-600 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-400' : ''}`} />
+              All Files ({files.length})
             </button>
-
-            {/* Search Bar */}
-            <div className="relative w-full sm:w-56">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search files or owners..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-1.5 bg-black/40 border border-emerald-950/50 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-              />
-            </div>
+            <button
+              onClick={() => setActiveTab('SHARED_FILES')}
+              className={`px-3.5 py-1.5 rounded-lg transition-all ${
+                activeTab === 'SHARED_FILES'
+                  ? 'bg-white text-blue-600 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Shared Files ({shares.length})
+            </button>
           </div>
+
+          {/* Refresh Button */}
+          <button
+            onClick={fetchFiles}
+            disabled={loading}
+            className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+            title="Refresh Files"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+          </button>
+
+          {/* Search Bar */}
+          <div className="relative w-full sm:w-56">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search files or owners..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Files Table Card */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-900">
+            {activeTab === 'ALL_FILES' ? 'Encrypted Physical Vault Files' : 'Active Sharing Grants'}
+          </h2>
+          <span className="text-xs text-slate-400 font-medium">
+            {activeTab === 'ALL_FILES' ? `${filteredFiles.length} records` : `${filteredShares.length} grants`}
+          </span>
         </div>
 
         {/* Tab 1: All Files Table */}
         {activeTab === 'ALL_FILES' && (
           <div className="overflow-x-auto min-h-[220px]">
             {loading && files.length === 0 ? (
-              <div className="py-16 text-center text-slate-500 font-mono text-xs flex flex-col items-center gap-3">
-                <RefreshCw className="w-6 h-6 animate-spin text-emerald-400" />
+              <div className="py-16 text-center text-slate-500 text-xs flex flex-col items-center gap-3">
+                <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
                 <span>Reading physical and metadata records...</span>
               </div>
             ) : filteredFiles.length === 0 ? (
-              <div className="py-16 text-center text-slate-500 font-mono text-xs border border-dashed border-emerald-950/40 rounded-xl">
+              <div className="py-16 text-center text-slate-500 text-xs">
                 {query ? `No files match '${query}'` : 'No files uploaded yet in the system'}
               </div>
             ) : (
               <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-emerald-950/40 text-slate-400 font-mono text-[11px] uppercase tracking-wider">
-                    <th className="py-3 px-4">File Name</th>
-                    <th className="py-3 px-4">Size (Encrypted)</th>
-                    <th className="py-3 px-4">Uploaded On</th>
-                    <th className="py-3 px-4">Owner</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                <thead className="bg-slate-50/75 border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3 px-6">File Name</th>
+                    <th className="py-3 px-6">Size (Encrypted)</th>
+                    <th className="py-3 px-6">Uploaded On</th>
+                    <th className="py-3 px-6">Owner</th>
+                    <th className="py-3 px-6 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-emerald-950/30">
+                <tbody className="divide-y divide-slate-100">
                   {filteredFiles.map((file) => {
                     const isMenuOpen = activeMenuId === file.id;
 
                     return (
-                      <tr key={file.id} className="hover:bg-emerald-500/5 transition-colors group">
-                        <td className="py-3.5 px-4 font-medium text-white flex items-center gap-2.5">
-                          <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span className="font-mono text-emerald-300 group-hover:text-emerald-200">
+                      <tr key={file.id} className="hover:bg-slate-50/80 transition-colors group">
+                        <td className="py-3.5 px-6 font-semibold text-slate-900 flex items-center gap-2.5">
+                          <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                          <span className="hover:text-blue-600 transition-colors">
                             {file.originalFilename}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-300 font-mono">
+                        <td className="py-3.5 px-6 text-slate-600 font-mono text-xs">
                           {formatBytes(file.encryptedSize || file.originalSize || 0)}
                         </td>
-                        <td className="py-3.5 px-4 text-slate-400 font-mono">
+                        <td className="py-3.5 px-6 text-slate-400">
                           {file.createdAt
                             ? new Date(file.createdAt).toLocaleDateString('en-GB', {
                                 day: 'numeric',
@@ -268,10 +278,10 @@ export const AdminFiles: React.FC = () => {
                               })
                             : '—'}
                         </td>
-                        <td className="py-3.5 px-4 text-slate-300 font-medium">
+                        <td className="py-3.5 px-6 text-slate-700 font-medium">
                           {file.ownerEmail}
                         </td>
-                        <td className="py-3.5 px-4 text-right relative">
+                        <td className="py-3.5 px-6 text-right relative">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -279,8 +289,8 @@ export const AdminFiles: React.FC = () => {
                             }}
                             className={`p-1.5 rounded-lg transition-colors ${
                               isMenuOpen
-                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                                : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
                             }`}
                             title="Actions"
                           >
@@ -291,29 +301,29 @@ export const AdminFiles: React.FC = () => {
                           {isMenuOpen && (
                             <div
                               onClick={(e) => e.stopPropagation()}
-                              className="absolute right-4 top-10 z-30 w-52 rounded-xl bg-[#081018] border border-emerald-950/80 shadow-2xl shadow-black/80 py-1.5 backdrop-blur-md"
+                              className="absolute right-4 top-10 z-30 w-52 rounded-xl bg-white border border-slate-200 shadow-xl py-1.5 animate-in fade-in duration-150"
                             >
                               <button
                                 onClick={() => {
                                   setInspectFile(file);
                                   setActiveMenuId(null);
                                 }}
-                                className="w-full px-3.5 py-2 text-left text-xs text-slate-200 hover:bg-emerald-500/10 hover:text-emerald-300 flex items-center gap-2.5 transition-colors"
+                                className="w-full px-3.5 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2.5 transition-colors"
                               >
-                                <Eye className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                                <Eye className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                                 <span>Inspect Crypto Metadata</span>
                               </button>
 
-                              <div className="border-t border-emerald-950/50 my-1" />
+                              <div className="border-t border-slate-100 my-1" />
 
                               <button
                                 onClick={() => {
                                   setFileToDelete(file);
                                   setActiveMenuId(null);
                                 }}
-                                className="w-full px-3.5 py-2 text-left text-xs text-rose-400 hover:bg-rose-500/15 flex items-center gap-2.5 transition-colors"
+                                className="w-full px-3.5 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
                               >
-                                <Trash2 className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                                <Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                                 <span>Purge Storage File</span>
                               </button>
                             </div>
@@ -332,61 +342,66 @@ export const AdminFiles: React.FC = () => {
         {activeTab === 'SHARED_FILES' && (
           <div className="overflow-x-auto min-h-[220px]">
             {loading && shares.length === 0 ? (
-              <div className="py-16 text-center text-slate-500 font-mono text-xs flex flex-col items-center gap-3">
-                <RefreshCw className="w-6 h-6 animate-spin text-emerald-400" />
+              <div className="py-16 text-center text-slate-500 text-xs flex flex-col items-center gap-3">
+                <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
                 <span>Reading active sharing delegations...</span>
               </div>
             ) : filteredShares.length === 0 ? (
-              <div className="py-16 text-center text-slate-500 font-mono text-xs border border-dashed border-emerald-950/40 rounded-xl">
+              <div className="py-16 text-center text-slate-500 text-xs">
                 No active sharing grants found
               </div>
             ) : (
               <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-emerald-950/40 text-slate-400 font-mono text-[11px] uppercase tracking-wider">
-                    <th className="py-3 px-4">Shared File</th>
-                    <th className="py-3 px-4">Owner (Granter)</th>
-                    <th className="py-3 px-4">Recipient</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Shared On</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                <thead className="bg-slate-50/75 border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3 px-6">Shared File</th>
+                    <th className="py-3 px-6">Owner (Granter)</th>
+                    <th className="py-3 px-6">Recipient</th>
+                    <th className="py-3 px-6">Status</th>
+                    <th className="py-3 px-6">Shared On</th>
+                    <th className="py-3 px-6 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-emerald-950/30">
+                <tbody className="divide-y divide-slate-100">
                   {filteredShares.map((share) => (
-                    <tr key={share.id} className="hover:bg-emerald-500/5 transition-colors group">
-                      <td className="py-3.5 px-4 font-mono text-emerald-300 font-medium flex items-center gap-2">
-                        <Share2 className="w-4 h-4 text-emerald-400" />
-                        {share.originalFilename}
+                    <tr key={share.id} className="hover:bg-slate-50/80 transition-colors group">
+                      <td className="py-3.5 px-6 font-semibold text-slate-900 flex items-center gap-2">
+                        <Share2 className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span>{share.originalFilename}</span>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-300">
-                        <div>{share.ownerName || share.ownerEmail}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">{share.ownerEmail}</div>
+                      <td className="py-3.5 px-6">
+                        <div className="font-semibold text-slate-900">{share.ownerName || share.ownerEmail}</div>
+                        <div className="text-[11px] text-slate-500">{share.ownerEmail}</div>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-300">
-                        <div>{share.recipientName || share.recipientEmail}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">{share.recipientEmail}</div>
+                      <td className="py-3.5 px-6">
+                        <div className="font-semibold text-slate-900">{share.recipientName || share.recipientEmail}</div>
+                        <div className="text-[11px] text-slate-500">{share.recipientEmail}</div>
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-6">
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-mono ${
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                             share.status === 'ACTIVE'
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-rose-50 text-rose-700 border border-rose-200'
                           }`}
                         >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              share.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-rose-500'
+                            }`}
+                          />
                           {share.status}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-400 font-mono text-xs">
+                      <td className="py-3.5 px-6 text-slate-400">
                         {share.createdAt ? new Date(share.createdAt).toLocaleDateString() : '—'}
                       </td>
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-3.5 px-6 text-right">
                         {share.status === 'ACTIVE' && (
                           <button
                             onClick={() => handleRevokeShare(share.id)}
                             disabled={actionLoading}
-                            className="px-2.5 py-1 bg-rose-500/15 border border-rose-500/30 text-rose-400 rounded-lg hover:bg-rose-500/25 transition-colors font-mono text-[10px]"
+                            className="px-2.5 py-1 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg hover:bg-rose-100 transition-colors text-xs font-semibold"
                           >
                             Revoke Share
                           </button>
@@ -403,73 +418,73 @@ export const AdminFiles: React.FC = () => {
 
       {/* Inspect File Crypto Metadata Modal */}
       {inspectFile && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="sec-card p-6 max-w-lg w-full space-y-5 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between border-b border-emerald-950/40 pb-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-5 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-blue-600" />
                   File Cryptographic Metadata
                 </h3>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">{inspectFile.originalFilename}</p>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">{inspectFile.originalFilename}</p>
               </div>
               <button
                 onClick={() => setInspectFile(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-              <div className="p-3 rounded-xl bg-black/40 border border-emerald-950/40">
-                <span className="text-slate-400 block text-[10px] uppercase">Plaintext Size</span>
-                <span className="text-white font-semibold mt-1 block">
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <span className="text-slate-500 block text-[10px] font-semibold uppercase">Plaintext Size</span>
+                <span className="text-slate-900 font-bold mt-1 block">
                   {formatBytes(inspectFile.originalSize || 0)}
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-black/40 border border-emerald-950/40">
-                <span className="text-slate-400 block text-[10px] uppercase">Encrypted Storage Size</span>
-                <span className="text-cyan-300 font-semibold mt-1 block">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <span className="text-slate-500 block text-[10px] font-semibold uppercase">Encrypted Storage Size</span>
+                <span className="text-blue-700 font-bold mt-1 block">
                   {formatBytes(inspectFile.encryptedSize || 0)}
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-black/40 border border-emerald-950/40">
-                <span className="text-slate-400 block text-[10px] uppercase">Owner Identity</span>
-                <span className="text-emerald-300 font-semibold mt-1 block truncate">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <span className="text-slate-500 block text-[10px] font-semibold uppercase">Owner Identity</span>
+                <span className="text-slate-900 font-bold mt-1 block truncate">
                   {inspectFile.ownerEmail}
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-black/40 border border-emerald-950/40">
-                <span className="text-slate-400 block text-[10px] uppercase">MIME Content Type</span>
-                <span className="text-white font-semibold mt-1 block">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <span className="text-slate-500 block text-[10px] font-semibold uppercase">MIME Content Type</span>
+                <span className="text-slate-900 font-bold mt-1 block">
                   {inspectFile.mimeType || 'application/octet-stream'}
                 </span>
               </div>
             </div>
 
             {/* Cryptographic Proof Details */}
-            <div className="p-3.5 rounded-xl bg-black/50 border border-emerald-950/50 space-y-2">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-slate-300 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-blue-600" />
                   SHA-256 Plaintext Checksum
                 </span>
                 <button
                   onClick={() => handleCopyHash(inspectFile.sha256Checksum)}
-                  className="text-[11px] font-mono text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
                 >
-                  {copiedHash ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  {copiedHash ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                   {copiedHash ? 'Copied' : 'Copy SHA-256'}
                 </button>
               </div>
-              <p className="text-[11px] text-slate-300 font-mono break-all bg-black/60 p-2.5 rounded-lg border border-emerald-950/40 select-all">
+              <p className="text-[11px] text-slate-700 font-mono break-all bg-white p-2.5 rounded-lg border border-slate-200 select-all shadow-2xs">
                 {inspectFile.sha256Checksum || 'Unavailable'}
               </p>
-              <div className="text-[10px] text-slate-400 font-mono pt-1">
+              <div className="text-[10px] text-slate-500 pt-1">
                 Crypto Suite: AES-256-GCM + Blowfish Layering &bull; ECDH P-256 Envelope &bull; Version: {inspectFile.cryptoProfileVersion || 'v1'}
               </div>
             </div>
@@ -477,7 +492,7 @@ export const AdminFiles: React.FC = () => {
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setInspectFile(null)}
-                className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs hover:bg-slate-700 font-medium"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
               >
                 Close
               </button>
@@ -488,16 +503,16 @@ export const AdminFiles: React.FC = () => {
 
       {/* Delete File Confirmation Modal */}
       {fileToDelete && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="sec-card p-6 max-w-md w-full space-y-4 animate-in fade-in duration-200">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Trash2 className="w-4 h-4 text-rose-400" />
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 animate-in fade-in duration-200">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-rose-500" />
               Confirm Storage File Purge
             </h3>
-            <p className="text-xs text-slate-300">
-              Are you sure you want to permanently purge file <strong className="text-white">{fileToDelete.originalFilename}</strong> owned by <span className="text-emerald-400">{fileToDelete.ownerEmail}</span>?
+            <p className="text-xs text-slate-600">
+              Are you sure you want to permanently purge file <strong className="text-slate-900">{fileToDelete.originalFilename}</strong> owned by <span className="font-semibold text-slate-800">{fileToDelete.ownerEmail}</span>?
             </p>
-            <p className="text-[11px] text-slate-400 font-mono bg-rose-500/10 p-3 rounded-xl border border-rose-500/20">
+            <p className="text-[11px] text-rose-700 bg-rose-50 p-3 rounded-xl border border-rose-200 leading-relaxed">
               This action securely shreds the encrypted payload on disk and invalidates all active sharing envelopes in the database.
             </p>
 
@@ -505,7 +520,7 @@ export const AdminFiles: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setFileToDelete(null)}
-                className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs hover:bg-slate-700"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
               >
                 Cancel
               </button>
@@ -513,7 +528,7 @@ export const AdminFiles: React.FC = () => {
                 type="button"
                 disabled={actionLoading}
                 onClick={handleDeleteFile}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold"
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
               >
                 {actionLoading ? 'Purging...' : 'Confirm Purge'}
               </button>

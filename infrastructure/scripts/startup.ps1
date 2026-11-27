@@ -3,7 +3,7 @@
 # ==============================================================================
 
 Write-Host "==================================================================" -ForegroundColor Cyan
-Write-Host "  Starting SecureShare Framework (Backend & Web Portals)" -ForegroundColor Cyan
+Write-Host "  Starting SecureVault Framework (Backend & Web Portals)" -ForegroundColor Cyan
 Write-Host "==================================================================" -ForegroundColor Cyan
 
 $RootPath = (Get-Item $PSScriptRoot).Parent.Parent.FullName

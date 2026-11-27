@@ -163,55 +163,55 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-xl bg-[#0b1325] border border-[#1a2744] rounded-2xl shadow-2xl p-6 relative text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="w-full max-w-xl bg-white border border-slate-200/90 rounded-2xl shadow-xl p-6 relative text-slate-800">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#141f36]">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 rounded-xl">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-wide">
+              <h3 className="text-base font-bold text-slate-900 tracking-tight">
                 Steganographic Decryption &amp; Download
               </h3>
-              <p className="text-[11px] text-slate-400 font-mono">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Extract Layer 4 Private Key from PNG Carrier to reverse 5-Layer Hybrid Encryption
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Target File Info */}
-        <div className="mt-4 p-3 bg-[#070e1c] border border-[#141f36] rounded-xl flex items-center justify-between text-xs">
+        <div className="mt-4 p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between text-xs">
           <div className="flex items-center gap-2.5 min-w-0">
-            <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
+            <FileText className="w-4 h-4 text-blue-600 shrink-0" />
             <div className="truncate">
-              <span className="font-semibold text-white truncate block">{filename}</span>
+              <span className="font-semibold text-slate-900 truncate block">{filename}</span>
               {fileSize && (
-                <span className="text-[10px] text-slate-400 font-mono">
+                <span className="text-[11px] text-slate-500">
                   {(fileSize / (1024 * 1024)).toFixed(2)} MB
                 </span>
               )}
             </div>
           </div>
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shrink-0">
+          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
             5-Layer Shielded
           </span>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex border-b border-[#141f36] mt-4">
+        <div className="flex p-1 bg-slate-100 rounded-xl text-xs font-semibold mt-4">
           <button
             type="button"
             onClick={() => setActiveTab('STEGO')}
-            className={`py-2 px-4 text-xs font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
+            className={`flex-1 py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
               activeTab === 'STEGO'
-                ? 'border-[#10b981] text-[#34d399]'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <ImageIcon className="w-3.5 h-3.5" />
@@ -220,10 +220,10 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('SESSION')}
-            className={`py-2 px-4 text-xs font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
+            className={`flex-1 py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
               activeTab === 'SESSION'
-                ? 'border-[#10b981] text-[#34d399]'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Key className="w-3.5 h-3.5" />
@@ -239,8 +239,8 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
               onDrop={handleDrop}
               className={`p-6 border-2 border-dashed rounded-xl text-center transition-all ${
                 extractedKey
-                  ? 'border-emerald-500/60 bg-emerald-500/5'
-                  : 'border-[#1b2b4e] hover:border-emerald-500/40 bg-[#070e1c]'
+                  ? 'border-emerald-500 bg-emerald-50/50'
+                  : 'border-slate-200 hover:border-blue-500 bg-slate-50'
               }`}
             >
               <input
@@ -251,19 +251,19 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
                 className="hidden"
               />
               <label htmlFor="stego-input" className="cursor-pointer flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-3 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-3 shadow-xs">
                   {extracting ? (
                     <RefreshCw className="w-5 h-5 animate-spin" />
                   ) : extractedKey ? (
-                    <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                   ) : (
                     <Upload className="w-5 h-5" />
                   )}
                 </div>
-                <span className="text-xs font-semibold text-white">
+                <span className="text-xs font-semibold text-slate-900">
                   {stegoFile ? stegoFile.name : 'Choose or Drag & Drop Stego Key Image (.png)'}
                 </span>
-                <span className="text-[11px] text-slate-400 mt-1">
+                <span className="text-[11px] text-slate-500 mt-1">
                   Extracts NIST P-256 ECC Private Key from Least Significant Bits (LSB)
                 </span>
               </label>
@@ -271,17 +271,17 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
 
             {/* Extracted Key Status Box */}
             {extractedKey && (
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl space-y-1 animate-fadeIn">
-                <div className="flex items-center justify-between text-xs font-semibold text-emerald-300">
+              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1 animate-in fade-in">
+                <div className="flex items-center justify-between text-xs font-semibold text-emerald-800">
                   <span className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     Key Successfully Extracted &amp; Verified (CRC-32 Valid)
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                     NIST P-256
                   </span>
                 </div>
-                <div className="text-[10px] font-mono text-slate-400 break-all select-all pt-1">
+                <div className="text-[10px] font-mono text-slate-500 break-all select-all pt-1">
                   {extractedKey.substring(0, 36)}••••••••••••••••••••••••••••••••••••
                 </div>
               </div>
@@ -289,15 +289,15 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
 
             {/* Quick Session Key Option */}
             {privateKey && !extractedKey && (
-              <div className="flex items-center justify-between p-2.5 bg-black/40 border border-slate-800 rounded-xl text-xs">
-                <div className="flex items-center gap-2 text-slate-300">
-                  <Key className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                <div className="flex items-center gap-2 text-slate-600">
+                  <Key className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                   <span>Keyring session key available:</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setActiveTab('SESSION')}
-                  className="px-2.5 py-1 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 rounded-lg text-[11px] font-medium transition-colors"
+                  className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold transition-colors"
                 >
                   Switch to Session Key
                 </button>
@@ -310,24 +310,24 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
         {activeTab === 'SESSION' && (
           <div className="mt-4 space-y-3">
             {privateKey ? (
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-between text-xs">
+              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <Key className="w-4 h-4 text-emerald-400" />
-                  <span className="text-white font-medium">Active Session Key Found</span>
+                  <Key className="w-4 h-4 text-emerald-600" />
+                  <span className="text-emerald-900 font-semibold">Active Session Key Found</span>
                 </div>
-                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded">
+                <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
                   Ready to Decrypt
                 </span>
               </div>
             ) : (
-              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>No private key found in current session. Paste your key below or use a Stego Image.</span>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Base64 PKCS#8 ECC Private Key:
               </label>
               <textarea
@@ -335,38 +335,38 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
                 placeholder="Paste your Base64 PKCS#8 ECC private key here..."
                 value={manualKey}
                 onChange={(e) => setManualKey(e.target.value)}
-                className="w-full px-3 py-2 bg-black/60 border border-slate-700 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
               />
             </div>
           </div>
         )}
 
         {/* Remember in Session Checkbox */}
-        <div className="mt-4 pt-2 border-t border-[#141f36] flex items-center justify-between text-xs">
-          <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+          <label className="flex items-center gap-2 cursor-pointer text-slate-600">
             <input
               type="checkbox"
               checked={saveToSession}
               onChange={(e) => setSaveToSession(e.target.checked)}
-              className="w-3.5 h-3.5 rounded bg-[#070e1c] border-[#1a2744] text-[#10b981] focus:ring-0"
+              className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-0"
             />
             <span>Remember this key in browser session for future downloads</span>
           </label>
         </div>
 
         {decryptError && (
-          <div className="mt-3 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+          <div className="mt-3 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
             <span>{decryptError}</span>
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="mt-5 flex items-center justify-end gap-3 pt-3 border-t border-[#141f36]">
+        <div className="mt-5 flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors"
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors"
           >
             Cancel
           </button>
@@ -374,7 +374,7 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
             type="button"
             onClick={handleExecuteDecrypt}
             disabled={decrypting || (activeTab === 'STEGO' ? !extractedKey : !manualKey.trim())}
-            className="px-5 py-2 sec-btn-emerald text-slate-950 font-bold text-xs flex items-center gap-2 disabled:opacity-50"
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-xs shadow-blue-500/20 flex items-center gap-2 disabled:opacity-50 transition-all"
           >
             {decrypting ? (
               <RefreshCw className="w-4 h-4 animate-spin" />

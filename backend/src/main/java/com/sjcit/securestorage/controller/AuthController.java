@@ -102,6 +102,17 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/supabase")
+    @Operation(summary = "Authenticate using Supabase session access token (Google OAuth or Supabase Auth)")
+    public ResponseEntity<LoginResponse> supabaseLogin(
+            @Valid @RequestBody SupabaseAuthRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) {
+        LoginResponse response = authService.supabaseLogin(request, httpRequest);
+        attachAuthCookies(response, httpResponse);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/forgot-password")
     @Operation(summary = "Request password reset OTP code")
     public ResponseEntity<Void> forgotPassword(

@@ -3,7 +3,7 @@
 # SECURE STORAGE FRAMEWORK — SHUTDOWN SCRIPT (BASH)
 # ==============================================================================
 
-echo "Shutting down SecureShare Framework Services..."
+echo "Shutting down SecureVault Framework Services..."
 
 # Kill port 8080
 BACKEND_PID=$(lsof -ti:8080)

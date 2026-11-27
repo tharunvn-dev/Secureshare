@@ -119,11 +119,11 @@ export const AdminUsers: React.FC = () => {
 
     const names = newName.trim().split(' ');
     const firstName = names[0] || 'User';
-    const lastName = names.slice(1).join(' ');
+    const lastName = names.slice(1).join(' ') || '';
 
     try {
       await api.post('/admin/users', {
-        email: newEmail.trim().toLowerCase(),
+        email: newEmail.trim(),
         password: newPassword,
         firstName,
         lastName,
@@ -166,98 +166,103 @@ export const AdminUsers: React.FC = () => {
     <div className="space-y-6">
       {/* Toast Notifications */}
       {successMsg && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 shrink-0" />
-            <span>{successMsg}</span>
+            <Check className="w-4 h-4 shrink-0 text-emerald-600" />
+            <span className="font-medium">{successMsg}</span>
           </div>
-          <button onClick={() => setSuccessMsg(null)}>
+          <button onClick={() => setSuccessMsg(null)} className="text-emerald-600 hover:text-emerald-800">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{errorMsg}</span>
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+            <span className="font-medium">{errorMsg}</span>
           </div>
-          <button onClick={() => setErrorMsg(null)}>
+          <button onClick={() => setErrorMsg(null)} className="text-rose-600 hover:text-rose-800">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Main Users Card */}
-      <div className="sec-card p-6">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-white tracking-wide">User Management</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Live Database Identities &bull; Role-Based Access Control (RBAC) &bull; Cryptographic Governance
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            {/* Search Box */}
-            <div className="relative flex-1 md:w-64">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search real users..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-black/40 border border-emerald-950/50 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            {/* Refresh Button */}
-            <button
-              onClick={fetchUsers}
-              disabled={loading}
-              className="p-2 rounded-xl bg-black/40 border border-emerald-950/50 text-slate-400 hover:text-white hover:border-emerald-500/50 transition-colors"
-              title="Refresh users list"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-400' : ''}`} />
-            </button>
-
-            {/* + Add User Button */}
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="sec-btn-emerald py-2 px-3.5 text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap"
-            >
-              <Plus className="w-4 h-4" />
-              Add User
-            </button>
-          </div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">User Management</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Live Database Identities &bull; Role-Based Access Control (RBAC) &bull; Cryptographic Governance
+          </p>
         </div>
 
-        {/* Real Users Table */}
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {/* Search Box */}
+          <div className="relative flex-1 sm:w-64">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
+            />
+          </div>
+
+          {/* Refresh Button */}
+          <button
+            onClick={fetchUsers}
+            disabled={loading}
+            className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+            title="Refresh users list"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+          </button>
+
+          {/* + Add User Button */}
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs shadow-blue-500/20 font-semibold text-xs py-2 px-3.5 flex items-center gap-1.5 whitespace-nowrap transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Add User
+          </button>
+        </div>
+      </div>
+
+      {/* Main Users Table Card */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-900">Registered Accounts ({filtered.length})</h2>
+          <span className="text-xs text-slate-400 font-medium">PostgreSQL Live Sync</span>
+        </div>
+
         <div className="overflow-x-auto min-h-[220px]">
           {loading && users.length === 0 ? (
-            <div className="py-16 text-center text-slate-500 font-mono text-xs flex flex-col items-center gap-3">
-              <RefreshCw className="w-6 h-6 animate-spin text-emerald-400" />
+            <div className="py-16 text-center text-slate-500 text-xs flex flex-col items-center gap-3">
+              <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
               <span>Fetching live users from database...</span>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-16 text-center text-slate-500 font-mono text-xs border border-dashed border-emerald-950/40 rounded-xl">
+            <div className="py-16 text-center text-slate-500 text-xs">
               {query ? `No registered users match '${query}'` : 'No users found in database'}
             </div>
           ) : (
             <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-emerald-950/40 text-slate-400 font-mono text-[11px] uppercase tracking-wider">
-                  <th className="py-3 px-4">Name</th>
-                  <th className="py-3 px-4">Email</th>
-                  <th className="py-3 px-4">Role</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Files / Storage</th>
-                  <th className="py-3 px-4">Joined On</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+              <thead className="bg-slate-50/75 border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                <tr>
+                  <th className="py-3 px-6">Name</th>
+                  <th className="py-3 px-6">Email</th>
+                  <th className="py-3 px-6">Role</th>
+                  <th className="py-3 px-6">Status</th>
+                  <th className="py-3 px-6">Files / Storage</th>
+                  <th className="py-3 px-6">Joined On</th>
+                  <th className="py-3 px-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-emerald-950/30">
+              <tbody className="divide-y divide-slate-100">
                 {filtered.map((u) => {
                   const isAdmin = u.roles?.includes('ADMIN') || u.roles?.includes('ROLE_ADMIN');
                   const isActive = u.status === 'ACTIVE';
@@ -266,48 +271,48 @@ export const AdminUsers: React.FC = () => {
                   const isMenuOpen = activeMenuId === u.id;
 
                   return (
-                    <tr key={u.id} className="hover:bg-emerald-500/5 transition-colors group">
-                      <td className="py-3.5 px-4 font-semibold text-white">
+                    <tr key={u.id} className="hover:bg-slate-50/80 transition-colors group">
+                      <td className="py-3.5 px-6 font-semibold text-slate-900">
                         {u.displayName || u.firstName || u.email.split('@')[0]}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-300 font-mono text-xs">
+                      <td className="py-3.5 px-6 text-slate-600">
                         {u.email}
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-6">
                         {isAdmin ? (
-                          <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[11px] font-semibold">
                             ADMIN
                           </span>
                         ) : (
-                          <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-semibold">
                             USER
                           </span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-6">
                         {isActive && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 inline-flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             Active
                           </span>
                         )}
                         {isSuspended && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/15 text-rose-400 border border-rose-500/30 inline-flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-semibold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                             Suspended
                           </span>
                         )}
                         {isPending && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/30 inline-flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-semibold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                             Pending OTP
                           </span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-300 font-mono text-[11px]">
+                      <td className="py-3.5 px-6 text-slate-600">
                         {u.fileCount || 0} files ({formatBytes(u.storageUsedBytes || 0)})
                       </td>
-                      <td className="py-3.5 px-4 text-slate-400 font-mono">
+                      <td className="py-3.5 px-6 text-slate-400">
                         {u.createdAt
                           ? new Date(u.createdAt).toLocaleDateString('en-GB', {
                               day: 'numeric',
@@ -316,7 +321,7 @@ export const AdminUsers: React.FC = () => {
                             })
                           : '—'}
                       </td>
-                      <td className="py-3.5 px-4 text-right relative">
+                      <td className="py-3.5 px-6 text-right relative">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -324,8 +329,8 @@ export const AdminUsers: React.FC = () => {
                           }}
                           className={`p-1.5 rounded-lg transition-colors ${
                             isMenuOpen
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                              : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                              ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                              : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
                           }`}
                           title="Actions Menu"
                         >
@@ -336,7 +341,7 @@ export const AdminUsers: React.FC = () => {
                         {isMenuOpen && (
                           <div
                             onClick={(e) => e.stopPropagation()}
-                            className="absolute right-4 top-10 z-30 w-48 rounded-xl bg-[#081018] border border-emerald-950/80 shadow-2xl shadow-black/80 py-1.5 backdrop-blur-md"
+                            className="absolute right-4 top-10 z-30 w-48 rounded-xl bg-white border border-slate-200 shadow-xl py-1.5 animate-in fade-in duration-150"
                           >
                             {/* Inspect Details */}
                             <button
@@ -344,9 +349,9 @@ export const AdminUsers: React.FC = () => {
                                 setInspectUser(u);
                                 setActiveMenuId(null);
                               }}
-                              className="w-full px-3.5 py-2 text-left text-xs text-slate-200 hover:bg-emerald-500/10 hover:text-emerald-300 flex items-center gap-2.5 transition-colors"
+                              className="w-full px-3.5 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2.5 transition-colors"
                             >
-                              <Eye className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                              <Eye className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                               <span>View Profile &amp; Keys</span>
                             </button>
 
@@ -355,32 +360,32 @@ export const AdminUsers: React.FC = () => {
                               <button
                                 onClick={() => handleStatusChange(u.id, 'SUSPENDED')}
                                 disabled={actionLoading}
-                                className="w-full px-3.5 py-2 text-left text-xs text-rose-300 hover:bg-rose-500/10 flex items-center gap-2.5 transition-colors"
+                                className="w-full px-3.5 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
                               >
-                                <UserX className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                                <UserX className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                                 <span>Suspend Account</span>
                               </button>
                             ) : (
                               <button
                                 onClick={() => handleStatusChange(u.id, 'ACTIVE')}
                                 disabled={actionLoading}
-                                className="w-full px-3.5 py-2 text-left text-xs text-emerald-300 hover:bg-emerald-500/10 flex items-center gap-2.5 transition-colors"
+                                className="w-full px-3.5 py-2 text-left text-xs text-emerald-600 hover:bg-emerald-50 flex items-center gap-2.5 transition-colors"
                               >
-                                <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                <UserCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                                 <span>Activate Account</span>
                               </button>
                             )}
 
                             {/* Soft Delete Account */}
-                            <div className="border-t border-emerald-950/50 my-1" />
+                            <div className="border-t border-slate-100 my-1" />
                             <button
                               onClick={() => {
                                 setUserToDelete(u);
                                 setActiveMenuId(null);
                               }}
-                              className="w-full px-3.5 py-2 text-left text-xs text-rose-400 hover:bg-rose-500/15 flex items-center gap-2.5 transition-colors"
+                              className="w-full px-3.5 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
                             >
-                              <Trash2 className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                              <Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                               <span>Delete User</span>
                             </button>
                           </div>
@@ -397,49 +402,49 @@ export const AdminUsers: React.FC = () => {
 
       {/* Inspect User Profile Modal */}
       {inspectUser && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="sec-card p-6 max-w-lg w-full space-y-5 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between border-b border-emerald-950/40 pb-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-5 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-blue-600" />
                   User Profile &amp; Cryptography
                 </h3>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">{inspectUser.email}</p>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">{inspectUser.email}</p>
               </div>
               <button
                 onClick={() => setInspectUser(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-              <div className="p-3 rounded-xl bg-black/40 border border-emerald-950/40">
-                <span className="text-slate-400 block text-[10px] uppercase">Account Status</span>
-                <span className="text-emerald-300 font-semibold mt-1 block">
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <span className="text-slate-500 block text-[10px] font-semibold uppercase">Account Status</span>
+                <span className="text-emerald-700 font-bold mt-1 block">
                   {inspectUser.status}
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-black/40 border border-emerald-950/40">
-                <span className="text-slate-400 block text-[10px] uppercase">Assigned Roles</span>
-                <span className="text-cyan-300 font-semibold mt-1 block">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <span className="text-slate-500 block text-[10px] font-semibold uppercase">Assigned Roles</span>
+                <span className="text-blue-700 font-bold mt-1 block">
                   {inspectUser.roles?.join(', ') || 'USER'}
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-black/40 border border-emerald-950/40">
-                <span className="text-slate-400 block text-[10px] uppercase">Files Stored</span>
-                <span className="text-white font-semibold mt-1 block">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <span className="text-slate-500 block text-[10px] font-semibold uppercase">Files Stored</span>
+                <span className="text-slate-900 font-bold mt-1 block">
                   {inspectUser.fileCount || 0} Files ({formatBytes(inspectUser.storageUsedBytes || 0)})
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-black/40 border border-emerald-950/40">
-                <span className="text-slate-400 block text-[10px] uppercase">Joined Date</span>
-                <span className="text-white font-semibold mt-1 block">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <span className="text-slate-500 block text-[10px] font-semibold uppercase">Joined Date</span>
+                <span className="text-slate-900 font-bold mt-1 block">
                   {new Date(inspectUser.createdAt).toLocaleDateString('en-GB', {
                     day: 'numeric',
                     month: 'short',
@@ -450,24 +455,24 @@ export const AdminUsers: React.FC = () => {
             </div>
 
             {/* Cryptographic Keyring Info */}
-            <div className="p-3.5 rounded-xl bg-black/50 border border-emerald-950/50 space-y-2">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-slate-300 flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-blue-600" />
                   ECC P-256 Public Key (ECDH)
                 </span>
                 <button
                   onClick={() => handleCopyKey(inspectUser.id)}
-                  className="text-[11px] font-mono text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
                 >
-                  {copiedKey ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  {copiedKey ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                   {copiedKey ? 'Copied' : 'Copy ID'}
                 </button>
               </div>
-              <p className="text-[11px] text-slate-400 font-mono break-all bg-black/60 p-2.5 rounded-lg border border-emerald-950/40">
+              <p className="text-[11px] text-slate-700 font-mono break-all bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
                 User UUID: {inspectUser.id}
               </p>
-              <p className="text-[10px] text-slate-500 font-mono">
+              <p className="text-[10px] text-slate-500">
                 Zero-Knowledge Guarantee: Private keys never touch server storage and remain protected in client steganography envelopes.
               </p>
             </div>
@@ -475,7 +480,7 @@ export const AdminUsers: React.FC = () => {
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setInspectUser(null)}
-                className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs hover:bg-slate-700 font-medium"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
               >
                 Close
               </button>
@@ -486,16 +491,16 @@ export const AdminUsers: React.FC = () => {
 
       {/* Delete User Confirmation Modal */}
       {userToDelete && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="sec-card p-6 max-w-md w-full space-y-4 animate-in fade-in duration-200">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Trash2 className="w-4 h-4 text-rose-400" />
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 animate-in fade-in duration-200">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-rose-500" />
               Confirm User Deactivation
             </h3>
-            <p className="text-xs text-slate-300">
-              Are you sure you want to deactivate account <strong className="text-white">{userToDelete.email}</strong>?
+            <p className="text-xs text-slate-600">
+              Are you sure you want to deactivate account <strong className="text-slate-900">{userToDelete.email}</strong>?
             </p>
-            <p className="text-[11px] text-slate-400 font-mono bg-rose-500/10 p-3 rounded-xl border border-rose-500/20">
+            <p className="text-[11px] text-rose-700 bg-rose-50 p-3 rounded-xl border border-rose-200 leading-relaxed">
               This revokes all active session tokens and sets account status to SUSPENDED. Stored encrypted files will remain safe in cold storage.
             </p>
 
@@ -503,7 +508,7 @@ export const AdminUsers: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setUserToDelete(null)}
-                className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs hover:bg-slate-700"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
               >
                 Cancel
               </button>
@@ -511,7 +516,7 @@ export const AdminUsers: React.FC = () => {
                 type="button"
                 disabled={actionLoading}
                 onClick={handleDeleteUser}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold"
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
               >
                 {actionLoading ? 'Deactivating...' : 'Confirm Delete'}
               </button>
@@ -522,49 +527,49 @@ export const AdminUsers: React.FC = () => {
 
       {/* Add User Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="sec-card p-6 max-w-md w-full space-y-4 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between border-b border-emerald-950/40 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Plus className="w-4 h-4 text-emerald-400" />
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Plus className="w-4 h-4 text-blue-600" />
                 Add New User
               </h3>
-              <button onClick={() => setShowAddModal(false)}>
-                <X className="w-4 h-4 text-slate-400 hover:text-white" />
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400 font-mono">
+            <p className="text-xs text-slate-500">
               Provisions a real registered identity in PostgreSQL with an auto-generated ECC keyring and password hash.
             </p>
 
             <form onSubmit={handleAddUser} className="space-y-3">
               <div>
-                <label className="text-xs font-mono text-slate-300 block mb-1">Full Name</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Full Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Rahul Sharma"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full px-3 py-2 bg-black/50 border border-emerald-950/50 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-mono text-slate-300 block mb-1">Email Address</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Email Address</label>
                 <input
                   type="email"
                   required
                   placeholder="user@example.com"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full px-3 py-2 bg-black/50 border border-emerald-950/50 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-mono text-slate-300 block mb-1">Initial Password</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Initial Password</label>
                 <input
                   type="text"
                   required
@@ -572,16 +577,16 @@ export const AdminUsers: React.FC = () => {
                   placeholder="At least 8 characters"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-black/50 border border-emerald-950/50 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white font-mono transition-all"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-mono text-slate-300 block mb-1">Role Assignment</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Role Assignment</label>
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value as any)}
-                  className="w-full px-3 py-2 bg-black/50 border border-emerald-950/50 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
                 >
                   <option value="USER">USER (Standard Encrypted Vault Access)</option>
                   <option value="ADMIN">ADMIN (Privileged Governance &amp; Security Oversight)</option>
@@ -592,14 +597,14 @@ export const AdminUsers: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs hover:bg-slate-700"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="sec-btn-emerald py-2 px-4 text-xs font-semibold"
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs shadow-blue-500/20 font-semibold text-xs py-2 px-4 transition-all"
                 >
                   {actionLoading ? 'Creating in Database...' : 'Create User'}
                 </button>

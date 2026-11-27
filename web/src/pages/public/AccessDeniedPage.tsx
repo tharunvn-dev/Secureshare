@@ -1,35 +1,41 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { ShieldAlert, ArrowLeft, Home } from 'lucide-react';
-import { TopFeatureBar } from '../../components/common/TopFeatureBar';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShieldAlert, ArrowLeft, Lock } from 'lucide-react';
 
 export const AccessDeniedPage: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
-    <div className="min-h-screen bg-[#060b14] flex flex-col font-sans selection:bg-[#10b981]/30 selection:text-[#34d399]">
-      <TopFeatureBar />
-      <div className="flex-1 flex items-center justify-center p-6 text-center">
-        <div className="w-full max-w-md bg-[#0b1325] border border-rose-500/30 rounded-2xl p-8 sm:p-10 shadow-2xl relative">
-          <div className="w-16 h-16 mx-auto rounded-full bg-rose-500/15 border border-rose-500/40 flex items-center justify-center text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.3)] mb-4">
-            <ShieldAlert className="w-8 h-8" />
-          </div>
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col justify-center items-center p-6 font-sans relative selection:bg-blue-600 selection:text-white">
+      {/* 403 Card matching Screen 15 from Design System */}
+      <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-2xl p-8 sm:p-10 shadow-sm text-center space-y-4">
+        <div className="w-14 h-14 mx-auto rounded-full bg-rose-50 text-rose-500 flex items-center justify-center">
+          <Lock className="w-7 h-7" />
+        </div>
 
-          <h1 className="text-2xl font-bold text-white tracking-tight">Access Denied (403)</h1>
-          <p className="text-xs text-slate-400 mt-2 max-w-xs mx-auto leading-relaxed">
-            You do not have permission to access this protected area.
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Access Denied</h1>
+          <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
+            You don't have permission to access this resource.
           </p>
+          <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 text-[10px] font-mono font-semibold">
+            HTTP 403 &bull; Forbidden
+          </span>
+        </div>
 
-          <div className="mt-8 flex justify-center gap-3">
-            <Link
-              to="/app/dashboard"
-              className="px-5 py-2.5 rounded-lg font-semibold bg-[#10b981] hover:bg-[#059669] text-slate-950 text-xs shadow-lg transition-all flex items-center gap-2"
-            >
-              <Home className="w-4 h-4" /> User Dashboard
-            </Link>
+        <div className="pt-4 space-y-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-xs shadow-sm shadow-blue-500/25 transition-all inline-flex items-center justify-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" /> Go Back
+          </button>
+          <div>
             <Link
               to="/login"
-              className="px-5 py-2.5 rounded-lg font-medium bg-[#13203c] hover:bg-[#1a2b50] text-slate-300 text-xs border border-[#22355e] transition-all flex items-center gap-2"
+              className="text-xs text-slate-500 hover:text-blue-600 font-medium"
             >
-              <ArrowLeft className="w-4 h-4" /> Sign In Again
+              Contact Administrator
             </Link>
           </div>
         </div>

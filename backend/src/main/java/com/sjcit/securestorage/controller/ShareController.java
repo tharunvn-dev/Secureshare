@@ -81,12 +81,28 @@ public class ShareController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("@authZ.canAccessShare(#id, authentication)")
-    @Operation(summary = "Revoke an active file share")
+    @Operation(summary = "Revoke or permanently dismiss a file share")
     public ResponseEntity<Void> revokeShare(
+            @PathVariable UUID id,
+            @RequestParam(value = "permanent", defaultValue = "false") boolean permanent,
+            @AuthenticationPrincipal User user,
+            HttpServletRequest httpRequest) {
+        if (permanent) {
+            fileShareService.deleteSharePermanently(id, user, httpRequest);
+        } else {
+            fileShareService.revokeShare(id, user, httpRequest);
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/dismiss")
+    @PreAuthorize("@authZ.canAccessShare(#id, authentication)")
+    @Operation(summary = "Permanently dismiss a file share record")
+    public ResponseEntity<Void> dismissShare(
             @PathVariable UUID id,
             @AuthenticationPrincipal User user,
             HttpServletRequest httpRequest) {
-        fileShareService.revokeShare(id, user, httpRequest);
+        fileShareService.deleteSharePermanently(id, user, httpRequest);
         return ResponseEntity.noContent().build();
     }
 

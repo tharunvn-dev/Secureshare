@@ -6,7 +6,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-echo "Starting SecureShare Framework..."
+echo "Starting SecureVault Framework..."
 
 # 1. Start backend in background
 cd "$ROOT_DIR/backend" || exit 1

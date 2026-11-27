@@ -41,7 +41,7 @@ public class EmailDeliveryService {
     @Value("${app.mail.resend-api-key:}")
     private String resendApiKey;
 
-    @Value("${app.mail.resend-from:SecureShare <onboarding@resend.dev>}")
+    @Value("${app.mail.resend-from:SecureVault <onboarding@resend.dev>}")
     private String resendFrom;
 
     @Value("${app.mail.webhook-url:}")
@@ -177,7 +177,7 @@ public class EmailDeliveryService {
     private void sendViaBrevo(String recipient, String subject, String bodyText, String bodyHtml) {
         try {
             JsonObject sender = new JsonObject();
-            sender.addProperty("name", "SecureShare Verification");
+            sender.addProperty("name", "SecureVault Verification");
             String senderEmail = (mailFrom != null && mailFrom.contains("@") && !mailFrom.contains("local"))
                     ? mailFrom : "tharunsanatani@gmail.com";
             sender.addProperty("email", senderEmail);
@@ -254,7 +254,7 @@ public class EmailDeliveryService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
         try {
-            helper.setFrom(mailFrom, "SecureShare Verification");
+            helper.setFrom(mailFrom, "SecureVault Verification");
         } catch (Exception ignored) {
             helper.setFrom(mailFrom);
         }
@@ -378,11 +378,11 @@ public class EmailDeliveryService {
         result.put("brevoConfigured", brevoApiKey != null && !brevoApiKey.isBlank());
         result.put("resendConfigured", resendApiKey != null && !resendApiKey.isBlank());
 
-        String subject = "SecureShare Email Delivery Test";
-        String bodyText = "This is a verification email from SecureShare to confirm that your email delivery channel is operational.\n\nTimestamp: " + Instant.now();
+        String subject = "SecureVault Email Delivery Test";
+        String bodyText = "This is a verification email from SecureVault to confirm that your email delivery channel is operational.\n\nTimestamp: " + Instant.now();
         String bodyHtml = "<div style=\"font-family:sans-serif;padding:20px;background:#0f172a;color:#f8fafc;border-radius:8px;\">"
                 + "<h2 style=\"color:#38bdf8;\">Email Delivery Verified</h2>"
-                + "<p>This is a test notification confirming that your SecureShare email delivery pipeline is working.</p>"
+                + "<p>This is a test notification confirming that your SecureVault email delivery pipeline is working.</p>"
                 + "<p style=\"color:#94a3b8;font-size:12px;\">Timestamp: " + Instant.now() + "</p></div>";
 
         EmailOutbox outbox = queueEmail(testRecipient, subject, bodyText, bodyHtml);

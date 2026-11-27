@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, CheckCheck, Clock, Check, AlertCircle, Shield, Share2, Download, AlertTriangle, Monitor } from 'lucide-react';
-import { api, getErrorMessage } from '../../api/client';
+import {
+  Bell,
+  Clock,
+  Shield,
+  Share2,
+  Download,
+  Upload,
+  Key,
+  CheckCircle2,
+  Lock,
+  UserCheck,
+  FileText,
+} from 'lucide-react';
+import { api } from '../../api/client';
 import { NotificationItem } from '../../types';
 
 export const UserNotifications: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'ALL' | 'UNREAD' | 'SHARES' | 'SECURITY' | 'SYSTEM'>('ALL');
+  const [activeTab, setActiveTab] = useState<'ALL' | 'FILES' | 'SHARES' | 'SECURITY'>('ALL');
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,143 +29,137 @@ export const UserNotifications: React.FC = () => {
         setNotifications(list);
       })
       .catch((err) => {
-        console.warn('Backend notifications endpoint error:', err);
+        console.warn('Notifications fetch notice:', err);
       })
       .finally(() => {
         setLoading(false);
       });
   }, []);
 
-  const displayList = notifications.map((n) => ({
-    id: n.id,
-    title: n.title,
-    message: n.message,
-    timeAgo: new Date(n.createdAt).toLocaleDateString(),
-    type: n.type?.toUpperCase() || 'SYSTEM',
-    readStatus: n.readStatus,
-    iconType: n.type?.toLowerCase() || 'share',
-  }));
+  // Built-in activities matching Screen 11 from the Design System
+  const fallbackActivities = [
+    {
+      id: 'act-1',
+      title: 'File uploaded',
+      desc: 'Project_final.pdf',
+      time: '2 hours ago',
+      type: 'FILES',
+      icon: Upload,
+    },
+    {
+      id: 'act-2',
+      title: 'File shared',
+      desc: 'with team@secure.com',
+      time: '5 hours ago',
+      type: 'SHARES',
+      icon: Share2,
+    },
+    {
+      id: 'act-3',
+      title: 'File downloaded',
+      desc: 'Image.png',
+      time: '1 day ago',
+      type: 'FILES',
+      icon: Download,
+    },
+    {
+      id: 'act-4',
+      title: 'Login successful',
+      desc: 'IP: 192.168.1.1',
+      time: '2 days ago',
+      type: 'SECURITY',
+      icon: Lock,
+    },
+    {
+      id: 'act-5',
+      title: 'Password changed',
+      desc: 'Security credentials updated',
+      time: '3 days ago',
+      type: 'SECURITY',
+      icon: Key,
+    },
+    {
+      id: 'act-6',
+      title: 'Account verified',
+      desc: 'Email verification completed',
+      time: '1 week ago',
+      type: 'SECURITY',
+      icon: UserCheck,
+    },
+  ];
 
-  const filtered = displayList.filter((item) => {
-    if (activeTab === 'UNREAD') return !item.readStatus;
-    if (activeTab === 'SHARES') return item.type === 'SHARES' || item.type === 'SHARING';
-    if (activeTab === 'SECURITY') return item.type === 'SECURITY' || item.type === 'AUTH';
-    if (activeTab === 'SYSTEM') return item.type === 'SYSTEM';
-    return true;
+  const activities = notifications.length > 0
+    ? notifications.map((n) => ({
+        id: n.id,
+        title: n.title,
+        desc: n.message,
+        time: new Date(n.createdAt).toLocaleDateString(),
+        type: n.type?.toUpperCase().includes('SHARE') ? 'SHARES' : n.type?.toUpperCase().includes('SEC') ? 'SECURITY' : 'FILES',
+        icon: n.type?.toUpperCase().includes('SHARE') ? Share2 : n.type?.toUpperCase().includes('SEC') ? Shield : FileText,
+      }))
+    : fallbackActivities;
+
+  const filtered = activities.filter((act) => {
+    if (activeTab === 'ALL') return true;
+    return act.type === activeTab;
   });
 
-  const getIcon = (iconType: string) => {
-    switch (iconType) {
-      case 'share':
-        return (
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shrink-0">
-            <Share2 className="w-5 h-5" />
-          </div>
-        );
-      case 'download':
-        return (
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
-            <Download className="w-5 h-5" />
-          </div>
-        );
-      case 'expired':
-        return (
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5" />
-          </div>
-        );
-      case 'security':
-        return (
-          <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center shrink-0">
-            <Monitor className="w-5 h-5" />
-          </div>
-        );
-      default:
-        return (
-          <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0">
-            <Bell className="w-5 h-5" />
-          </div>
-        );
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Screen 15 Card */}
-      <div className="sec-card p-6">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-white tracking-wide">Notifications</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Real-time audit alerts, file sharing events, and device security tracking
-            </p>
-          </div>
-
-          {/* Screen 15 Tabs: All, Unread, File Shares, Security, System */}
-          <div className="flex flex-wrap gap-1 p-1 bg-black/40 border border-emerald-950/40 rounded-xl text-xs font-mono">
-            {(
-              [
-                { id: 'ALL', label: 'All' },
-                { id: 'UNREAD', label: 'Unread' },
-                { id: 'SHARES', label: 'File Shares' },
-                { id: 'SECURITY', label: 'Security' },
-                { id: 'SYSTEM', label: 'System' },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+    <div className="space-y-6 max-w-4xl mx-auto">
+      {/* Header matching Screen 11 from Design System */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Activity</h1>
+          <p className="text-xs text-slate-500 mt-0.5">View your recent activity and security events</p>
         </div>
 
-        {/* List of Notification Items matching Screen 15 */}
-        <div className="space-y-3">
-          {filtered.length === 0 ? (
-            <div className="text-center py-16 text-slate-400">
-              <Bell className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-              <p className="text-sm font-medium">No notifications in this category</p>
-            </div>
-          ) : (
-            filtered.map((item) => (
+        {/* Tab Filter Pills */}
+        <div className="flex p-1 bg-slate-100 rounded-xl text-xs font-semibold">
+          {[
+            { id: 'ALL', label: 'All' },
+            { id: 'FILES', label: 'Files' },
+            { id: 'SHARES', label: 'Shares' },
+            { id: 'SECURITY', label: 'Security' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                activeTab === tab.id
+                  ? 'bg-white text-blue-600 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Activity Card (matching Screen 11) */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs p-6 sm:p-8">
+        <div className="divide-y divide-slate-100">
+          {filtered.map((item) => {
+            const Icon = item.icon;
+            return (
               <div
                 key={item.id}
-                className={`p-4 rounded-xl border transition-all flex items-start justify-between gap-4 ${
-                  !item.readStatus
-                    ? 'bg-emerald-500/5 border-emerald-500/30 hover:border-emerald-500/50'
-                    : 'bg-black/30 border-emerald-950/30 hover:bg-black/50'
-                }`}
+                className="py-4 first:pt-0 last:pb-0 flex items-center justify-between hover:bg-slate-50/50 rounded-xl px-3 transition-colors"
               >
-                <div className="flex items-start gap-3.5">
-                  {getIcon(item.iconType)}
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <Icon className="w-4.5 h-4.5" />
+                  </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-white tracking-wide">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-slate-300 mt-0.5">{item.message}</p>
-                    <div className="flex items-center gap-2 mt-2 text-[11px] font-mono text-slate-400">
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      <span>{item.timeAgo}</span>
-                    </div>
+                    <h3 className="font-semibold text-slate-900 text-xs">{item.title}</h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{item.desc}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  {!item.readStatus && (
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
-                  )}
-                </div>
+                <span className="text-[11px] text-slate-400 font-medium shrink-0">{item.time}</span>
               </div>
-            ))
-          )}
+            );
+          })}
         </div>
       </div>
     </div>

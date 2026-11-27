@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Shield, ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { api, getErrorMessage } from '../../api/client';
-import { TopFeatureBar } from '../../components/common/TopFeatureBar';
 
 export const ForgotPasswordPage: React.FC = () => {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -27,77 +25,77 @@ export const ForgotPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#060b14] flex flex-col font-sans selection:bg-[#10b981]/30 selection:text-[#34d399]">
-      <TopFeatureBar />
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col justify-center items-center p-6 font-sans relative selection:bg-blue-600 selection:text-white">
+      {/* Brand Header */}
+      <div className="flex items-center gap-2.5 mb-8">
+        <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
+          <Shield className="w-5 h-5" />
+        </div>
+        <span className="font-bold text-xl text-slate-900 tracking-tight">SecureStorage</span>
+      </div>
 
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md bg-[#0b1325] border border-[#1a2744] rounded-2xl p-8 sm:p-10 shadow-2xl relative text-center">
-          <div className="w-14 h-14 mx-auto rounded-xl bg-[#10b981]/15 border border-[#10b981]/40 flex items-center justify-center text-[#10b981] mb-4">
-            <Lock className="w-7 h-7" />
-          </div>
-
-          <h2 className="text-2xl font-bold text-white tracking-tight">Reset Your Password</h2>
-          <p className="text-xs text-slate-400 mt-2 max-w-xs mx-auto">
-            Enter your email to receive a reset link
+      <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-2xl shadow-sm p-8 sm:p-10 relative">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Reset Your Password</h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Enter your email address to receive password reset instructions
           </p>
+        </div>
 
-          {error && (
-            <div className="mt-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2 text-left">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
+        {error && (
+          <div className="mb-6 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {!submitted ? (
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            <div>
+              <label className="block text-slate-700 font-semibold mb-1.5">Email address</label>
+              <input
+                type="email"
+                required
+                placeholder="john@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all text-xs"
+              />
             </div>
-          )}
 
-          {!submitted ? (
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4 text-left text-xs">
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Email Address</label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="sec-input pl-9"
-                  />
-                </div>
-              </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl shadow-sm shadow-blue-500/25 transition-all text-xs disabled:opacity-50 mt-2"
+            >
+              {loading ? 'Sending Instructions...' : 'Send Reset Link'}
+            </button>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full sec-btn-emerald py-3 text-slate-950 font-bold tracking-wide disabled:opacity-50 mt-2"
+            <div className="text-center pt-2">
+              <Link
+                to="/login"
+                className="text-xs text-slate-500 hover:text-slate-800 font-medium inline-flex items-center gap-1.5"
               >
-                {loading ? (
-                  <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  'Send Reset Link'
-                )}
-              </button>
-            </form>
-          ) : (
-            <div className="mt-6 space-y-4 text-center">
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>Password reset OTP dispatched to your email!</span>
-              </div>
-              <button
-                onClick={() => navigate(`/reset-password?email=${encodeURIComponent(email)}`)}
-                className="w-full sec-btn-emerald py-2.5 text-xs text-slate-950 font-semibold"
-              >
-                Enter Reset Code &rarr;
-              </button>
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to Login
+              </Link>
             </div>
-          )}
-
-          <div className="mt-6 pt-4 border-t border-[#141f36]">
-            <Link to="/login" className="text-xs text-slate-400 hover:text-white flex items-center justify-center gap-1.5">
-              <ArrowLeft className="w-3.5 h-3.5" /> Back to Login
+          </form>
+        ) : (
+          <div className="text-center space-y-4">
+            <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <p className="text-xs text-slate-600">
+              If an account with <span className="font-semibold text-slate-900">{email}</span> exists, password reset instructions have been sent.
+            </p>
+            <Link
+              to="/login"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 rounded-xl text-xs"
+            >
+              Return to Login
             </Link>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import com.sjcit.securestorage.repository.RoleRepository;
 import com.sjcit.securestorage.repository.UserRepository;
 import com.sjcit.securestorage.security.GoogleTokenVerifierService;
 import com.sjcit.securestorage.security.JwtTokenProvider;
+import com.sjcit.securestorage.security.SupabaseTokenVerifierService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,7 @@ public class AuthService {
     private final OtpService otpService;
     private final AuditLogService auditLogService;
     private final GoogleTokenVerifierService googleVerifierService;
+    private final SupabaseTokenVerifierService supabaseVerifierService;
     private final EccKeyManagementService eccKeyService;
     private final NotificationService notificationService;
     private final EmailValidationService emailValidationService;
@@ -59,6 +61,7 @@ public class AuthService {
             OtpService otpService,
             AuditLogService auditLogService,
             GoogleTokenVerifierService googleVerifierService,
+            SupabaseTokenVerifierService supabaseVerifierService,
             EccKeyManagementService eccKeyService,
             NotificationService notificationService,
             EmailValidationService emailValidationService) {
@@ -70,6 +73,7 @@ public class AuthService {
         this.otpService = otpService;
         this.auditLogService = auditLogService;
         this.googleVerifierService = googleVerifierService;
+        this.supabaseVerifierService = supabaseVerifierService;
         this.eccKeyService = eccKeyService;
         this.notificationService = notificationService;
         this.emailValidationService = emailValidationService;
@@ -252,6 +256,44 @@ public class AuthService {
         }
 
         auditLogService.logEvent(user, "GOOGLE_LOGIN_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "Authenticated via Google OpenID Connect", httpRequest);
+        return issueTokens(user, httpRequest);
+    }
+
+    public LoginResponse supabaseLogin(SupabaseAuthRequest request, HttpServletRequest httpRequest) {
+        SupabaseTokenVerifierService.SupabaseUserClaims claims = supabaseVerifierService.verifyToken(request.getAccessToken());
+        String email = claims.getEmail().toLowerCase().trim();
+
+        User user = userRepository.findByEmailIgnoreCaseAndDeletedFlagFalse(email).orElse(null);
+
+        if (user == null) {
+            user = new User();
+            user.setEmail(email);
+            user.setPasswordHash(passwordEncoder.encode(jwtTokenProvider.generateOpaqueRefreshToken()));
+            user.setFirstName(claims.getFirstName());
+            user.setLastName(claims.getLastName());
+            user.setStatus("ACTIVE");
+            user.setMfaEnabled(false);
+
+            Role userRole = roleRepository.findByNameIgnoreCaseAndDeletedFlagFalse("USER")
+                    .orElseThrow(() -> new RuntimeException("Default USER role missing from database."));
+            user.setRoles(new HashSet<>(Collections.singletonList(userRole)));
+
+            if (request.getPublicKeyEcc() != null && !request.getPublicKeyEcc().isBlank()) {
+                user.setPublicKeyEcc(request.getPublicKeyEcc().trim());
+            } else {
+                KeyPair keyPair = eccKeyService.generateKeyPair();
+                user.setPublicKeyEcc(eccKeyService.encodePublicKey(keyPair.getPublic()));
+            }
+
+            user = userRepository.save(user);
+            auditLogService.logEvent(user, "SUPABASE_REGISTER_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "Account registered via Supabase (" + claims.getProvider() + ")", httpRequest);
+        } else {
+            if ("SUSPENDED".equalsIgnoreCase(user.getStatus())) {
+                throw new UnauthorizedException("Your account has been suspended.");
+            }
+        }
+
+        auditLogService.logEvent(user, "SUPABASE_LOGIN_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "Authenticated via Supabase (" + claims.getProvider() + ")", httpRequest);
         return issueTokens(user, httpRequest);
     }
 

@@ -64,80 +64,88 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose }) => {
 
   const processStegoImage = async (file: File) => {
     if (!file.name.toLowerCase().endsWith('.png')) {
-      setImportStatus('Please upload a lossless PNG image (.png).');
+      setImportStatus('Stego carrier must be a lossless PNG image (.png).');
       return;
     }
+
+    setImportStatus('Extracting private key from carrier pixels...');
     try {
-      setImportStatus('Extracting private key from stego carrier pixels...');
-      const key = await extractKeyFromStegoImage(file);
-      setPrivateKey(key);
-      setImportStatus('Private key extracted successfully from stego image and activated in session!');
+      const extractedKey = await extractKeyFromStegoImage(file);
+      setPrivateKey(extractedKey);
+      setImportStatus('Private key successfully extracted and loaded into session!');
       setTimeout(() => setImportStatus(null), 4000);
     } catch (err: any) {
-      setImportStatus('Stego extraction failed: ' + (err.message || 'Corrupted or missing key envelope.'));
+      setImportStatus(err.message || 'Failed to extract key from stego carrier image.');
+    }
+  };
+
+  const handleImportKey = () => {
+    if (!importKeyInput.trim()) {
+      setImportStatus('Please provide an ECC private key string.');
+      return;
+    }
+
+    try {
+      let cleanKey = importKeyInput.trim();
+      if (cleanKey.includes('-----BEGIN')) {
+        cleanKey = cleanKey
+          .replace(/-----BEGIN[\s\S]*?-----/g, '')
+          .replace(/-----END[\s\S]*?-----/g, '')
+          .replace(/["']/g, '')
+          .replace(/\s+/g, '');
+      }
+
+      setPrivateKey(cleanKey);
+      setImportStatus('Key loaded into local session successfully.');
+      setImportKeyInput('');
+      setTimeout(() => setImportStatus(null), 4000);
+    } catch (err: any) {
+      setImportStatus(`Failed to import key: ${err.message}`);
     }
   };
 
   const handleGenerateKeypair = async () => {
+    setIsGenerating(true);
+    setImportStatus(null);
     try {
-      setIsGenerating(true);
-      setImportStatus('Generating NIST P-256 keypair via Web Crypto API...');
       const keypair = await generateEccKeyPair();
-      
-      // Update local storage and AuthContext state
       setPrivateKey(keypair.privateKeyBase64);
 
-      // Register / sync public key with backend server
-      await api.put('/auth/public-key', { publicKeyEcc: keypair.publicKeyBase64 });
-      await refreshUser();
+      await api.put('/users/keys', {
+        publicKeyEcc: keypair.publicKeyBase64,
+      });
 
-      // Download backup key
+      if (refreshUser) {
+        await refreshUser();
+      }
+
       const content = `-----BEGIN EC PRIVATE KEY (NIST P-256)-----\n${keypair.privateKeyBase64}\n-----END EC PRIVATE KEY-----`;
       downloadFile(content, `${user?.email || 'user'}_ecc_private.key`);
 
-      setImportStatus('New NIST P-256 ECC Keypair generated, synchronized with server, and downloaded to disk!');
-    } catch (err) {
-      setImportStatus('Generation error: ' + getErrorMessage(err));
+      setImportStatus('New keypair generated! Public key registered and private key downloaded.');
+    } catch (err: any) {
+      setImportStatus(getErrorMessage(err));
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleImportKey = () => {
-    let cleaned = importKeyInput.trim();
-    if (cleaned.includes('-----BEGIN')) {
-      cleaned = cleaned
-        .replace(/-----BEGIN[\s\S]*?-----/g, '')
-        .replace(/-----END[\s\S]*?-----/g, '')
-        .replace(/["']/g, '')
-        .replace(/\s+/g, '');
-    }
-    if (!cleaned) {
-      setImportStatus('Invalid key format. Must be Base64 PKCS#8 ECC key.');
-      return;
-    }
-    setPrivateKey(cleaned);
-    setImportStatus('Private key successfully imported to local session!');
-    setImportKeyInput('');
-    setTimeout(() => setImportStatus(null), 3000);
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-2xl bg-[#0d1527] border border-cyan-500/30 rounded-2xl shadow-2xl p-6 text-slate-100 relative">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="w-full max-w-2xl bg-white border border-slate-200/90 rounded-2xl shadow-xl p-6 text-slate-800 relative">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-xl">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <Key className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white tracking-wide">
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">
                 ECC Cryptographic Keyring (Layer 4)
               </h2>
-              <p className="text-xs text-slate-400 font-mono">Curve: NIST P-256 (secp256r1) | HKDF-SHA-256</p>
+              <p className="text-xs text-slate-500 font-mono mt-0.5">Curve: NIST P-256 (secp256r1) | HKDF-SHA-256</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -146,21 +154,21 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose }) => {
           {/* Public Key */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5 text-cyan-400" />
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-blue-600" />
                 Public Key (Registered on Server)
               </label>
               {user?.publicKeyEcc && (
                 <button
                   onClick={() => handleCopy(user.publicKeyEcc!, false)}
-                  className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-mono transition-colors"
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
                 >
-                  {copiedPublic ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedPublic ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                   {copiedPublic ? 'Copied' : 'Copy Public Key'}
                 </button>
               )}
             </div>
-            <div className="p-3 bg-black/50 border border-slate-800 rounded-lg font-mono text-xs text-cyan-300/80 break-all select-all">
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-blue-700 break-all select-all">
               {user?.publicKeyEcc || 'No public key registered.'}
             </div>
           </div>
@@ -168,14 +176,14 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose }) => {
           {/* Private Key */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                <Key className="w-3.5 h-3.5 text-amber-400" />
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-amber-600" />
                 Private Key (Client Decryption Key)
               </label>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowPrivateKey(!showPrivateKey)}
-                  className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition-colors"
+                  className="text-xs font-medium text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors"
                 >
                   {showPrivateKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   {showPrivateKey ? 'Hide' : 'Reveal'}
@@ -184,21 +192,21 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose }) => {
                   <>
                     <button
                       onClick={() => handleCopy(privateKey, true)}
-                      className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-mono transition-colors"
+                      className="text-xs font-semibold text-amber-600 hover:text-amber-700 flex items-center gap-1 transition-colors"
                     >
-                      {copiedPrivate ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedPrivate ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                       {copiedPrivate ? 'Copied' : 'Copy'}
                     </button>
                     <button
                       onClick={handleDownloadPrivateKey}
-                      className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-mono transition-colors"
+                      className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 transition-colors"
                     >
                       <Download className="w-3.5 h-3.5" />
                       Backup (.key)
                     </button>
                     <button
                       onClick={handleOpenStegoBackup}
-                      className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-mono transition-colors"
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
                       title="Choose any image from your computer to conceal your private key via LSB steganography"
                     >
                       <ImageIcon className="w-3.5 h-3.5" />
@@ -208,7 +216,7 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose }) => {
                 )}
               </div>
             </div>
-            <div className="p-3 bg-black/50 border border-slate-800 rounded-lg font-mono text-xs text-amber-300/90 break-all select-all min-h-[56px] flex items-center">
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-800 break-all select-all min-h-[56px] flex items-center">
               {privateKey ? (
                 showPrivateKey ? (
                   privateKey
@@ -216,7 +224,7 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose }) => {
                   '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'
                 )
               ) : (
-                <span className="text-slate-500 italic">
+                <span className="text-slate-400 italic">
                   No private key found in current browser storage. Please import your backed-up key or Stego Image below to decrypt files.
                 </span>
               )}
@@ -224,39 +232,39 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Generate or Sync Key Section */}
-          <div className="pt-2 border-t border-slate-800">
+          <div className="pt-3 border-t border-slate-100">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                 Key Generation &amp; Hardware Sync
               </h4>
               <button
                 onClick={handleGenerateKeypair}
                 disabled={isGenerating}
-                className="px-3.5 py-1.5 bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white text-xs font-medium rounded-lg transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50"
+                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-all shadow-xs shadow-blue-500/20 flex items-center gap-1.5 disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
                 {isGenerating ? 'Generating...' : 'Generate New Keypair'}
               </button>
             </div>
-            <p className="text-[11px] text-slate-400 font-mono mb-3">
+            <p className="text-xs text-slate-500 mb-3">
               Generates a fresh NIST P-256 (secp256r1) keypair via Web Crypto API, uploads public key to server, and downloads private key backup (.key).
             </p>
           </div>
 
           {/* Import Key Section with Stego and Text Tabs */}
-          <div className="pt-2 border-t border-slate-800">
+          <div className="pt-3 border-t border-slate-100">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Upload className="w-3.5 h-3.5 text-emerald-400" />
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Upload className="w-3.5 h-3.5 text-blue-600" />
                 Restore Private Key
               </h4>
-              <div className="flex bg-black/40 border border-slate-800 rounded-lg p-0.5 text-[11px]">
+              <div className="flex bg-slate-100 rounded-lg p-0.5 text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setImportMode('STEGO')}
-                  className={`px-2.5 py-0.5 rounded transition-colors flex items-center gap-1 ${
-                    importMode === 'STEGO' ? 'bg-emerald-500/20 text-emerald-300 font-medium' : 'text-slate-400 hover:text-white'
+                  className={`px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
+                    importMode === 'STEGO' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <ImageIcon className="w-3 h-3" />
@@ -265,8 +273,8 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose }) => {
                 <button
                   type="button"
                   onClick={() => setImportMode('TEXT')}
-                  className={`px-2.5 py-0.5 rounded transition-colors flex items-center gap-1 ${
-                    importMode === 'TEXT' ? 'bg-cyan-500/20 text-cyan-300 font-medium' : 'text-slate-400 hover:text-white'
+                  className={`px-3 py-1 rounded-md transition-all flex items-center gap-1 ${
+                    importMode === 'TEXT' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <Key className="w-3 h-3" />
@@ -280,7 +288,7 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose }) => {
                 <div
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleStegoDrop}
-                  className="p-4 border border-dashed border-emerald-500/40 hover:border-emerald-500/70 bg-black/40 rounded-xl text-center transition-all cursor-pointer"
+                  className="p-5 border-2 border-dashed border-slate-200 hover:border-blue-500 bg-slate-50 rounded-xl text-center transition-all cursor-pointer"
                 >
                   <input
                     type="file"
@@ -290,11 +298,11 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose }) => {
                     className="hidden"
                   />
                   <label htmlFor="keymodal-stego-upload" className="cursor-pointer flex flex-col items-center">
-                    <ImageIcon className="w-6 h-6 text-emerald-400 mb-1" />
-                    <span className="text-xs font-semibold text-white">
+                    <ImageIcon className="w-6 h-6 text-blue-600 mb-1" />
+                    <span className="text-xs font-semibold text-slate-900">
                       Drop or Choose Stego Key Image (.png)
                     </span>
-                    <span className="text-[10px] text-slate-400 mt-0.5">
+                    <span className="text-[11px] text-slate-500 mt-0.5">
                       Extracts concealed private key from carrier pixels with CRC-32 integrity validation
                     </span>
                   </label>
@@ -307,11 +315,11 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose }) => {
                   placeholder="Paste your Base64 PKCS#8 ECC private key here..."
                   value={importKeyInput}
                   onChange={(e) => setImportKeyInput(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-black/60 border border-slate-700 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                  className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
                 />
                 <button
                   onClick={handleImportKey}
-                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium rounded-lg transition-colors shadow-lg shadow-cyan-900/30 whitespace-nowrap"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-all shadow-xs shadow-blue-500/20 whitespace-nowrap"
                 >
                   Import Key
                 </button>
@@ -320,10 +328,10 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose }) => {
 
             {importStatus && (
               <p
-                className={`mt-2 text-xs font-mono p-2.5 rounded-lg border ${
+                className={`mt-2 text-xs p-3 rounded-xl border ${
                   importStatus.includes('successfully') || importStatus.includes('generated') || importStatus.includes('extracted')
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                    : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-rose-50 border-rose-200 text-rose-800'
                 }`}
               >
                 {importStatus}
@@ -335,7 +343,7 @@ export const KeyModal: React.FC<KeyModalProps> = ({ isOpen, onClose }) => {
         <div className="mt-6 flex justify-end">
           <button
             onClick={onClose}
-            className="px-5 py-2 text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition-colors"
+            className="px-5 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors"
           >
             Close Keyring
           </button>

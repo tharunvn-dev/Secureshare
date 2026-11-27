@@ -1,4 +1,4 @@
-# SecureShare: Project Presentation Deck & Comprehensive Defense Script
+# SecureVault: Project Presentation Deck & Comprehensive Defense Script
 
 **Project Title:** A Multi-Layer Secure File Storage and Sharing Framework Using Hybrid Cryptography and Steganographic Key Management in Cloud Environments  
 **Institution:** SJC Institute of Technology (SJCIT), Chickballapur  
@@ -10,7 +10,7 @@
 ## Slide 1: Title & Introduction Slide
 
 ### On-Slide Content:
-- **Project Title:** SecureShare / SecureVault
+- **Project Title:** SecureVault / SecureVault
 - **Full Scope:** A Multi-Layer Secure File Storage and Sharing Framework Using Hybrid Cryptography and Steganographic Key Management
 - **Department:** Department of Computer Science & Engineering
 - **Institution:** SJC Institute of Technology (SJCIT), Chickballapur
@@ -43,15 +43,15 @@
 ### Detailed Spoken Script (What to say):
 > *"When organizations upload files to cloud providers, they typically rely on 'Server-Side Encryption' like AWS SSE-S3. However, this is a custodial trust model: the provider encrypts the file, but the provider also holds the key in their Key Management Service. If a cloud server is subpoenaed, hacked, or abused by a malicious insider, customer data is exposed in plaintext.  
 > Furthermore, current systems use a single cipher. If that single cipher or its initialization vector handling has a flaw, the entire defense collapses. Finally, encrypted files openly advertise their headers, making them high-priority targets.  
-> Our motivation was straightforward: What if the cloud server never sees plaintext, never sees private keys, and cannot decrypt files even under physical server seizure? That is what SecureShare achieves."*
+> Our motivation was straightforward: What if the cloud server never sees plaintext, never sees private keys, and cannot decrypt files even under physical server seizure? That is what SecureVault achieves."*
 
 ---
 
-## Slide 3: Existing Systems vs. SecureShare Framework
+## Slide 3: Existing Systems vs. SecureVault Framework
 
 ### On-Slide Content:
 
-| Capability / Metric | Traditional Cloud (Dropbox/G-Drive) | Standard Client-Side Tools | SecureShare (Our System) |
+| Capability / Metric | Traditional Cloud (Dropbox/G-Drive) | Standard Client-Side Tools | SecureVault (Our System) |
 | :--- | :--- | :--- | :--- |
 | **Trust Model** | Custodial (Server holds keys) | Semi-Custodial / Complex setup | **100% Zero-Knowledge** |
 | **Ciphers Used** | Single Layer (AES-256 only) | Single Layer (AES or RSA) | **Cascaded Hybrid: AES-256-GCM + Blowfish 448-bit** |
@@ -61,9 +61,9 @@
 | **Tamper Resistance** | Blind to bit-rot or byte modification | Detectable after download | **Constant-Time Cryptographic Verification & Audit Logs** |
 
 ### Detailed Spoken Script (What to say):
-> *"To demonstrate our technical advancement to the guides, this slide contrasts existing solutions against SecureShare.  
+> *"To demonstrate our technical advancement to the guides, this slide contrasts existing solutions against SecureVault.  
 > Commercial clouds use single-layer AES and hold your keys. Third-party tools like VeraCrypt require clunky offline setups and do not solve multi-user network sharing.  
-> SecureShare bridges this gap: We cascade AES-256-GCM with Blowfish for dual authenticated diffusion, conceal asymmetric private keys within everyday PNG images using 2-bit LSB steganography, and delegate access using Elliptic Curve Diffie-Hellman envelope re-wrapping without re-encrypting the underlying physical file."*
+> SecureVault bridges this gap: We cascade AES-256-GCM with Blowfish for dual authenticated diffusion, conceal asymmetric private keys within everyday PNG images using 2-bit LSB steganography, and delegate access using Elliptic Curve Diffie-Hellman envelope re-wrapping without re-encrypting the underlying physical file."*
 
 ---
 
@@ -156,7 +156,7 @@
 
 ### Detailed Spoken Script (What to say):
 > *"One of the greatest security dilemmas in asymmetric cryptography is: Where does the user store their private key? Storing it in localStorage or as a .txt file on the desktop invites theft.  
-> In SecureShare, we conceal the private key inside the pixel matrix of an image using 2-bit Spatial Least Significant Bit steganography.  
+> In SecureVault, we conceal the private key inside the pixel matrix of an image using 2-bit Spatial Least Significant Bit steganography.  
 > We engineered a custom 13-byte binary frame with an 'SVK1' identifier, payload length, and a 32-bit CRC checksum. The user can pick any photo of their choice—their college ID, a scenic photo, or an avatar. The bits of the private key are distributed across the lowest bits of the RGB color channels.  
 > The visual difference is completely undetectable, yielding a Peak Signal-to-Noise Ratio exceeding 52 decibels. When decrypting, the user simply selects their carrier image, and our engine extracts and validates the key in milliseconds."*
 
@@ -176,7 +176,7 @@
 ### Detailed Spoken Script (What to say):
 > *"How does secure file sharing work without sharing passwords?  
 > When Alice wants to share an encrypted file with Bob, naive systems either send Bob the password or re-encrypt the entire 500 MB file. That is inefficient and insecure.  
-> In SecureShare, we implement Elliptic Curve Diffie-Hellman key agreement using the NIST P-256 curve.  
+> In SecureVault, we implement Elliptic Curve Diffie-Hellman key agreement using the NIST P-256 curve.  
 > Alice uses Bob's public key to generate a shared secret, feeds it into an RFC 5869 HKDF key derivation function, and wraps only the 32-byte Data Encryption Key into a secure envelope.  
 > The server stores this lightweight wrapped envelope alongside the file. When Bob logs in, his private key extracts the envelope. The actual encrypted multi-megabyte file remains untouched on disk. This delivers instantaneous, cryptographically isolated file sharing."*
 
@@ -221,7 +221,7 @@
   - **Tailwind CSS & Lucide Icons:** Modern obsidian and emerald cybersecurity UI design.
 
 ### Detailed Spoken Script (What to say):
-> *"Here is the production-grade technology stack behind SecureShare.  
+> *"Here is the production-grade technology stack behind SecureVault.  
 > The backend is built on Java 21 LTS and Spring Boot 3.3.4. We utilize Spring Security 6 with stateless JWT tokens and Bouncy Castle cryptographic providers. For persistence, we use PostgreSQL 16 managed through Flyway database migrations.  
 > On the frontend, we use React 18 with TypeScript and Vite. The client leverages the native Web Crypto API and HTML5 Canvas API for zero-latency in-browser steganography and hashing.  
 > Every route, DTO, and database entity is strictly type-checked, ensuring robust security with zero compilation errors."*
@@ -266,7 +266,7 @@
   - **Decentralized Storage:** Integrate IPFS (InterPlanetary File System) for distributed ciphertext hosting.
 
 ### Detailed Spoken Script (What to say):
-> *"In conclusion, SecureShare demonstrates that cloud storage can achieve military-grade confidentiality without sacrificing user convenience or performance.  
+> *"In conclusion, SecureVault demonstrates that cloud storage can achieve military-grade confidentiality without sacrificing user convenience or performance.  
 > By uniting hybrid dual-cipher encryption with spatial steganography and zero-knowledge key delegation, we eliminate both external attacker vulnerabilities and internal cloud administrator threats.  
 > For future work, we plan to incorporate NIST Post-Quantum lattice-based cryptography such as ML-KEM to protect against quantum adversaries, as well as homomorphic search over encrypted indexes.  
 > Thank you, Respected Guides and Faculty. We are now open for your questions and would be delighted to demonstrate the live working application."*
