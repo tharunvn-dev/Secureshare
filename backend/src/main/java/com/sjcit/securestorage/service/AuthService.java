@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -86,18 +87,34 @@ public class AuthService {
         // Validate that email is legitimate, exists, and belongs to an active domain (reject random/fake emails)
         emailValidationService.validateEmailDeliverability(email);
 
-        if (userRepository.existsByEmailIgnoreCaseAndDeletedFlagFalse(email)) {
-            auditLogService.logEvent(null, "REGISTER_ATTEMPT_DUPLICATE", "USER", email, "FAILURE", "Registration attempted with existing email", httpRequest);
-            throw new BadRequestException("An account with this email address already exists.");
+        // Check if account already exists across all records (including soft-deleted)
+        Optional<User> existingUserOpt = userRepository.findByEmailIgnoreCase(email);
+        User user;
+        if (existingUserOpt.isPresent()) {
+            User existing = existingUserOpt.get();
+            if (!existing.isDeletedFlag()) {
+                auditLogService.logEvent(null, "REGISTER_ATTEMPT_DUPLICATE", "USER", email, "FAILURE", "Registration attempted with existing email", httpRequest);
+                throw new BadRequestException("An account with this email address already exists.");
+            }
+            // Existing account was soft-deleted: seamlessly restore and reactivate with new registration details
+            user = existing;
+            user.setDeletedFlag(false);
+            user.setStatus("PENDING");
+            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+            user.setFirstName(request.getFirstName() != null ? request.getFirstName().trim() : "");
+            user.setLastName(request.getLastName() != null ? request.getLastName().trim() : "");
+            user.setMfaEnabled(true);
+            user.setUpdatedAt(Instant.now());
+        } else {
+            user = new User();
+            user.setEmail(email);
+            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+            user.setFirstName(request.getFirstName() != null ? request.getFirstName().trim() : "");
+            user.setLastName(request.getLastName() != null ? request.getLastName().trim() : "");
+            user.setStatus("PENDING");
+            user.setMfaEnabled(true);
+            user.setCreatedAt(Instant.now());
         }
-
-        User user = new User();
-        user.setEmail(email);
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setFirstName(request.getFirstName() != null ? request.getFirstName().trim() : "");
-        user.setLastName(request.getLastName() != null ? request.getLastName().trim() : "");
-        user.setStatus("PENDING");
-        user.setMfaEnabled(true);
 
         // Assign default USER role
         Role userRole = roleRepository.findByNameIgnoreCaseAndDeletedFlagFalse("USER")

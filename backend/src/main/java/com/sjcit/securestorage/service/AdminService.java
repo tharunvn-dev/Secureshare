@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -193,12 +194,22 @@ public class AdminService {
     @Transactional
     public AdminUserResponse createUser(AdminCreateUserRequest request, User admin, HttpServletRequest httpRequest) {
         String email = request.getEmail().toLowerCase().trim();
-        if (userRepository.existsByEmailIgnoreCaseAndDeletedFlagFalse(email)) {
-            throw new BadRequestException("An account with email '" + email + "' already exists.");
+        Optional<User> existingOpt = userRepository.findByEmailIgnoreCase(email);
+        User user;
+        if (existingOpt.isPresent()) {
+            User existing = existingOpt.get();
+            if (!existing.isDeletedFlag()) {
+                throw new BadRequestException("An account with email '" + email + "' already exists.");
+            }
+            user = existing;
+            user.setDeletedFlag(false);
+            user.setUpdatedAt(Instant.now());
+        } else {
+            user = new User();
+            user.setEmail(email);
+            user.setCreatedAt(Instant.now());
         }
 
-        User user = new User();
-        user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
 
         String name = request.getDisplayName();
