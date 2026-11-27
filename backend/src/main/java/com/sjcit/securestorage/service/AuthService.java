@@ -281,7 +281,13 @@ public class AuthService {
                 user.setPublicKeyEcc(eccKeyService.encodePublicKey(keyPair.getPublic()));
             }
 
-            user = userRepository.save(user);
+            try {
+                user = userRepository.save(user);
+            } catch (Exception ex) {
+                log.warn("Concurrent Google register detected for {}: {}", email, ex.getMessage());
+                user = userRepository.findByEmailIgnoreCase(email)
+                        .orElseThrow(() -> new RuntimeException("Could not persist or find user: " + email));
+            }
             auditLogService.logEvent(user, "GOOGLE_REGISTER_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "Account registered via Google OpenID Connect", httpRequest);
         }
 
@@ -333,7 +339,13 @@ public class AuthService {
                 user.setPublicKeyEcc(eccKeyService.encodePublicKey(keyPair.getPublic()));
             }
 
-            user = userRepository.save(user);
+            try {
+                user = userRepository.save(user);
+            } catch (Exception ex) {
+                log.warn("Concurrent Supabase register detected for {}: {}", email, ex.getMessage());
+                user = userRepository.findByEmailIgnoreCase(email)
+                        .orElseThrow(() -> new RuntimeException("Could not persist or find user: " + email));
+            }
             auditLogService.logEvent(user, "SUPABASE_REGISTER_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "Account registered via Supabase (" + claims.getProvider() + ")", httpRequest);
         }
 

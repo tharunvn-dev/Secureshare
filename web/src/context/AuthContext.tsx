@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { api, getErrorMessage } from '../api/client';
 import { User, LoginResponse } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { generateEccKeyPair } from '../utils/crypto';
 
 interface AuthContextType {
   user: User | null;
@@ -183,19 +184,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     throw new Error('Google authentication failed');
   };
 
+  const inFlightSupabaseToken = useRef<string | null>(null);
+  const lastProcessedSupabaseToken = useRef<string | null>(null);
+
   const loginWithSupabase = async (accessToken: string, publicKeyEcc?: string): Promise<User> => {
-    const res = await api.post<LoginResponse>('/auth/supabase', {
-      accessToken,
-      publicKeyEcc,
-    });
-    if (res.data.accessToken && res.data.user) {
-      setToken(res.data.accessToken);
-      setUser(res.data.user);
-      localStorage.setItem('token', res.data.accessToken);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-      return res.data.user;
+    if (lastProcessedSupabaseToken.current === accessToken && user) {
+      return user;
     }
-    throw new Error('Supabase authentication failed');
+    if (inFlightSupabaseToken.current === accessToken) {
+      if (user) return user;
+    }
+    inFlightSupabaseToken.current = accessToken;
+
+    try {
+      let pubKey = publicKeyEcc;
+      const existingKey = localStorage.getItem('ecc_private_key');
+      if (!existingKey) {
+        try {
+          const keyPair = await generateEccKeyPair();
+          setPrivateKey(keyPair.privateKeyBase64);
+          pubKey = keyPair.publicKeyBase64;
+        } catch (e) {
+          console.warn('Auto ECC key generation note:', e);
+        }
+      }
+
+      const res = await api.post<LoginResponse>('/auth/supabase', {
+        accessToken,
+        publicKeyEcc: pubKey,
+      });
+      if (res.data.accessToken && res.data.user) {
+        setToken(res.data.accessToken);
+        setUser(res.data.user);
+        localStorage.setItem('token', res.data.accessToken);
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+        lastProcessedSupabaseToken.current = accessToken;
+        return res.data.user;
+      }
+      throw new Error('Supabase authentication failed');
+    } finally {
+      inFlightSupabaseToken.current = null;
+    }
   };
 
   // Listen for Supabase session after OAuth redirect (Google Sign-In)
@@ -231,6 +260,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       // Ignore
     } finally {
+      if (supabase) {
+        supabase.auth.signOut().catch(() => {});
+      }
+      lastProcessedSupabaseToken.current = null;
       setUser(null);
       setToken(null);
       setPrivateKeyState(null);

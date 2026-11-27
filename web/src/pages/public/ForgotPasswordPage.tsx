@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { api, getErrorMessage } from '../../api/client';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 
 export const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -15,7 +16,17 @@ export const ForgotPasswordPage: React.FC = () => {
     setLoading(true);
 
     try {
-      await api.post('/auth/forgot-password', { email: email.trim() });
+      const cleanEmail = email.trim().toLowerCase();
+      if (isSupabaseConfigured && supabase) {
+        try {
+          await supabase.auth.resetPasswordForEmail(cleanEmail, {
+            redirectTo: `${window.location.origin}/reset-password`,
+          });
+        } catch (supaErr) {
+          console.warn('Supabase resetPasswordForEmail note:', supaErr);
+        }
+      }
+      await api.post('/auth/forgot-password', { email: cleanEmail });
       setSubmitted(true);
     } catch (err) {
       setError(getErrorMessage(err));

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Shield, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Shield, AlertCircle, Eye, EyeOff, MailCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { generateEccKeyPair, downloadFile } from '../../utils/crypto';
 import { api, getErrorMessage } from '../../api/client';
-import { signInWithGoogleOAuth } from '../../lib/supabase';
+import { isSupabaseConfigured, signInWithGoogleOAuth, signUpWithSupabaseEmail, supabase } from '../../lib/supabase';
 
 export const RegisterPage: React.FC = () => {
-  const { register, setPrivateKey } = useAuth();
+  const { register, setPrivateKey, loginWithSupabase } = useAuth();
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState('');
@@ -20,6 +20,7 @@ export const RegisterPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmationSent, setConfirmationSent] = useState(false);
 
   const handleGoogleSignUp = async () => {
     setError(null);
@@ -76,10 +77,38 @@ export const RegisterPage: React.FC = () => {
       const backupText = `-----BEGIN EC PRIVATE KEY (NIST P-256)-----\n${keyPair.privateKeyBase64}\n-----END EC PRIVATE KEY-----`;
       downloadFile(backupText, `${trimmedEmail}_ecc_private.key`);
 
-      // 2. Call backend register API
+      // 2. Register via Supabase if configured (real transactional email to any inbox)
+      if (isSupabaseConfigured && supabase) {
+        try {
+          const supaRes = await signUpWithSupabaseEmail(trimmedEmail, password, fullName.trim());
+
+          // If Supabase returned an immediate active session (email confirmation off)
+          if (supaRes.session?.access_token) {
+            await loginWithSupabase(supaRes.session.access_token, keyPair.publicKeyBase64);
+            navigate('/app/dashboard');
+            return;
+          }
+
+          // Supabase dispatched real verification email
+          if (supaRes.user) {
+            setConfirmationSent(true);
+            return;
+          }
+        } catch (supaErr: any) {
+          const msg = supaErr?.message || '';
+          if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already exists')) {
+            setError(msg);
+            setLoading(false);
+            return;
+          }
+          console.warn('Supabase signup fallback note:', msg);
+        }
+      }
+
+      // 3. Fallback to Spring Boot register API
       const registeredUser = await register(trimmedEmail, password, firstName, lastName, keyPair.publicKeyBase64);
 
-      // 3. Navigate to OTP verification page (Screen 4)
+      // 4. Navigate to OTP verification page (Screen 4)
       navigate(`/verify-email?email=${encodeURIComponent(trimmedEmail)}`, {
         state: { devOtp: (registeredUser as any)?.devOtp },
       });
@@ -102,10 +131,34 @@ export const RegisterPage: React.FC = () => {
 
       {/* Main Card (matching Screen 3 from Design System) */}
       <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-2xl shadow-sm p-8 sm:p-10 relative">
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Create Your Account</h2>
-          <p className="text-xs text-slate-500 mt-1">Join Secure Vault and keep your files safe</p>
-        </div>
+        {confirmationSent ? (
+          <div className="text-center py-4">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto mb-4">
+              <MailCheck className="w-7 h-7" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 tracking-tight">Check Your Inbox</h3>
+            <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+              We've dispatched an official verification email to <br />
+              <strong className="text-slate-900 font-semibold">{email.trim().toLowerCase()}</strong>.
+            </p>
+            <p className="text-[11px] text-slate-500 mt-3 bg-slate-50 p-3 rounded-xl border border-slate-200 leading-normal">
+              Click the confirmation link inside the email to instantly activate your account. You will be redirected straight to your dashboard!
+            </p>
+            <div className="mt-6 flex flex-col gap-2.5">
+              <Link
+                to="/login"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-xs shadow-sm transition-all text-center"
+              >
+                Go to Login
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Create Your Account</h2>
+              <p className="text-xs text-slate-500 mt-1">Join Secure Vault and keep your files safe</p>
+            </div>
 
         {/* Google OAuth Button (Top Primary Option) */}
         <button
@@ -237,6 +290,8 @@ export const RegisterPage: React.FC = () => {
             Login
           </Link>
         </div>
+      </>
+    )}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, Mail, Shield, AlertCircle, ArrowLeft, Eye, EyeOff, KeyRound, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getErrorMessage, api } from '../../api/client';
-import { isSupabaseConfigured, signInWithGoogleOAuth, supabase } from '../../lib/supabase';
+import { isSupabaseConfigured, signInWithGoogleOAuth, signInWithSupabaseEmail, supabase } from '../../lib/supabase';
 
 export const LoginPage: React.FC = () => {
   const { user, isAuthenticated, isAdmin, login, verifyMfa, loginWithSupabase } = useAuth();
@@ -81,7 +81,31 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const res = await login(email.trim(), password);
+      const cleanEmail = email.trim().toLowerCase();
+
+      // 1. Authenticate via Supabase first if configured
+      if (isSupabaseConfigured && supabase) {
+        try {
+          const supaRes = await signInWithSupabaseEmail(cleanEmail, password);
+          if (supaRes.session?.access_token) {
+            const authenticatedUser = await loginWithSupabase(supaRes.session.access_token);
+            const admin = authenticatedUser.roles?.some((r) => r.toUpperCase() === 'ADMIN' || r === 'ROLE_ADMIN');
+            navigate(admin ? '/admin/dashboard' : '/app/dashboard', { replace: true });
+            return;
+          }
+        } catch (supaErr: any) {
+          const msg = supaErr?.message || '';
+          if (msg.toLowerCase().includes('email not confirmed')) {
+            setError('Please confirm your email address before logging in. Check your inbox for the Supabase confirmation email.');
+            setLoading(false);
+            return;
+          }
+          // If invalid credentials in Supabase, fall through to Spring Boot login for admin or existing backend accounts
+        }
+      }
+
+      // 2. Fall back to Spring Boot authentication (e.g. admin@example.com)
+      const res = await login(cleanEmail, password);
       if (res.mfaRequired) {
         setMfaRequired(true);
         setMfaTimer(45);
