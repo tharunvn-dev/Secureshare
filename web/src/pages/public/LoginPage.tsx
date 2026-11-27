@@ -31,6 +31,13 @@ export const LoginPage: React.FC = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const isVerified = searchParams.get('verified') === 'true';
+  const oauthParamError = searchParams.get('error_description') || searchParams.get('error');
+
+  useEffect(() => {
+    if (oauthParamError) {
+      setError(oauthParamError);
+    }
+  }, [oauthParamError]);
 
   // Automatically navigate to dashboard if already authenticated
   useEffect(() => {
@@ -42,6 +49,16 @@ export const LoginPage: React.FC = () => {
   // Handle Supabase OAuth return
   useEffect(() => {
     const hash = window.location.hash;
+    if (hash && hash.includes('error=')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const desc = params.get('error_description') || params.get('error');
+      if (desc) {
+        setError(decodeURIComponent(desc.replace(/\+/g, ' ')));
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+      return;
+    }
+
     if (hash && hash.includes('access_token=')) {
       setGoogleLoading(true);
       const params = new URLSearchParams(hash.substring(1));
@@ -93,14 +110,8 @@ export const LoginPage: React.FC = () => {
             navigate(admin ? '/admin/dashboard' : '/app/dashboard', { replace: true });
             return;
           }
-        } catch (supaErr: any) {
-          const msg = supaErr?.message || '';
-          if (msg.toLowerCase().includes('email not confirmed')) {
-            setError('Please confirm your email address before logging in. Check your inbox for the Supabase confirmation email.');
-            setLoading(false);
-            return;
-          }
-          // If invalid credentials in Supabase, fall through to Spring Boot login for admin or existing backend accounts
+        } catch {
+          // Fall through smoothly to Spring Boot backend authentication
         }
       }
 

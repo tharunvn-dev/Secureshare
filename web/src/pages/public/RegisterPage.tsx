@@ -77,34 +77,17 @@ export const RegisterPage: React.FC = () => {
       const backupText = `-----BEGIN EC PRIVATE KEY (NIST P-256)-----\n${keyPair.privateKeyBase64}\n-----END EC PRIVATE KEY-----`;
       downloadFile(backupText, `${trimmedEmail}_ecc_private.key`);
 
-      // 2. Register via Supabase (real transactional email delivery to any inbox)
+      // 2. Register via Spring Boot Backend
+      const registeredUser = await register(trimmedEmail, password, firstName, lastName, keyPair.publicKeyBase64);
+
+      // Best-effort non-blocking sync with Supabase if configured
       if (isSupabaseConfigured && supabase) {
-        try {
-          const supaRes = await signUpWithSupabaseEmail(trimmedEmail, password, fullName.trim());
-
-          // If Supabase returned an immediate active session (email confirmation off)
-          if (supaRes.session?.access_token) {
-            await loginWithSupabase(supaRes.session.access_token, keyPair.publicKeyBase64);
-            navigate('/app/dashboard');
-            return;
-          }
-
-          // Supabase dispatched real verification email
-          if (supaRes.user) {
-            setConfirmationSent(true);
-            return;
-          }
-        } catch (supaErr: any) {
-          setError(supaErr?.message || 'Registration failed');
-          return;
-        }
-      } else {
-        // Fallback only if Supabase is unconfigured
-        const registeredUser = await register(trimmedEmail, password, firstName, lastName, keyPair.publicKeyBase64);
-        navigate(`/verify-email?email=${encodeURIComponent(trimmedEmail)}`, {
-          state: { devOtp: (registeredUser as any)?.devOtp },
-        });
+        signUpWithSupabaseEmail(trimmedEmail, password, fullName.trim()).catch(() => {});
       }
+
+      navigate(`/verify-email?email=${encodeURIComponent(trimmedEmail)}`, {
+        state: { devOtp: (registeredUser as any)?.devOtp },
+      });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
