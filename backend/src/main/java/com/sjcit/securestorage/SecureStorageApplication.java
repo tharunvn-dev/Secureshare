@@ -89,6 +89,15 @@ public class SecureStorageApplication {
             ConfigurableEnvironment env = context.getEnvironment();
             Map<String, Object> overrides = new HashMap<>();
 
+            // 0. Auto-fix Render DB_HOST if short internal name was used
+            String rawHost = env.getProperty("DB_HOST");
+            if (rawHost != null && rawHost.trim().startsWith("dpg-") && !rawHost.contains(".")) {
+                String fixedHost = rawHost.trim() + ".oregon-postgres.render.com";
+                overrides.put("DB_HOST", fixedHost);
+                System.setProperty("DB_HOST", fixedHost);
+                log.info("DatabaseUrlNormalizer: Auto-resolved Render DB_HOST to '{}'", fixedHost);
+            }
+
             String rawDbUrl = env.getProperty("SPRING_DATASOURCE_URL");
             if (rawDbUrl == null || rawDbUrl.isBlank()) {
                 rawDbUrl = env.getProperty("DATABASE_URL");
@@ -132,6 +141,12 @@ public class SecureStorageApplication {
                             log.info("DatabaseUrlNormalizer: Extracted cloud database username '{}'", user);
                         }
 
+                        // Auto-fix Render internal hostnames in URL
+                        if (hostAndPath.contains("dpg-") && !hostAndPath.contains(".render.com") && !hostAndPath.contains(".postgres.")) {
+                            hostAndPath = hostAndPath.replaceAll("dpg-([a-zA-Z0-9]+)-a", "dpg-$1-a.oregon-postgres.render.com");
+                            log.info("DatabaseUrlNormalizer: Auto-resolved Render hostAndPath: {}", hostAndPath);
+                        }
+
                         String finalJdbcUrl = "jdbc:postgresql://" + hostAndPath;
                         if (!finalJdbcUrl.equals(rawDbUrl)) {
                             overrides.put("spring.datasource.url", finalJdbcUrl);
@@ -143,12 +158,26 @@ public class SecureStorageApplication {
                         }
                     } else if (!rawDbUrl.startsWith("jdbc:")) {
                         String finalJdbcUrl = "jdbc:" + rawDbUrl;
+                        if (finalJdbcUrl.contains("dpg-") && !finalJdbcUrl.contains(".render.com") && !finalJdbcUrl.contains(".postgres.")) {
+                            finalJdbcUrl = finalJdbcUrl.replaceAll("dpg-([a-zA-Z0-9]+)-a", "dpg-$1-a.oregon-postgres.render.com");
+                        }
                         overrides.put("spring.datasource.url", finalJdbcUrl);
                         overrides.put("DB_URL", finalJdbcUrl);
                         overrides.put("SPRING_DATASOURCE_URL", finalJdbcUrl);
                         System.setProperty("SPRING_DATASOURCE_URL", finalJdbcUrl);
                         System.setProperty("DB_URL", finalJdbcUrl);
                         log.info("DatabaseUrlNormalizer: Prepended 'jdbc:' to connection URL: {}", finalJdbcUrl);
+                    } else {
+                        // rawDbUrl starts with jdbc:
+                        if (rawDbUrl.contains("dpg-") && !rawDbUrl.contains(".render.com") && !rawDbUrl.contains(".postgres.")) {
+                            String finalJdbcUrl = rawDbUrl.replaceAll("dpg-([a-zA-Z0-9]+)-a", "dpg-$1-a.oregon-postgres.render.com");
+                            overrides.put("spring.datasource.url", finalJdbcUrl);
+                            overrides.put("DB_URL", finalJdbcUrl);
+                            overrides.put("SPRING_DATASOURCE_URL", finalJdbcUrl);
+                            System.setProperty("SPRING_DATASOURCE_URL", finalJdbcUrl);
+                            System.setProperty("DB_URL", finalJdbcUrl);
+                            log.info("DatabaseUrlNormalizer: Auto-fixed JDBC URL with Render domain: {}", finalJdbcUrl);
+                        }
                     }
                 } catch (Exception e) {
                     log.warn("DatabaseUrlNormalizer: Failed to parse URL '{}': {}", rawDbUrl, e.getMessage());

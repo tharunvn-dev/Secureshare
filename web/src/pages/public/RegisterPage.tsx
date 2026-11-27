@@ -155,6 +155,7 @@ export const RegisterPage: React.FC = () => {
 
         {/* Google OAuth Button (Top Primary Option) */}
         <button
+          type="button"
           onClick={handleGoogleSignUp}
           disabled={googleLoading}
           className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-xs font-semibold shadow-xs transition-all disabled:opacity-50"
