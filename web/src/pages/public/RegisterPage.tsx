@@ -77,7 +77,7 @@ export const RegisterPage: React.FC = () => {
       const backupText = `-----BEGIN EC PRIVATE KEY (NIST P-256)-----\n${keyPair.privateKeyBase64}\n-----END EC PRIVATE KEY-----`;
       downloadFile(backupText, `${trimmedEmail}_ecc_private.key`);
 
-      // 2. Register via Supabase if configured (real transactional email to any inbox)
+      // 2. Register via Supabase (real transactional email delivery to any inbox)
       if (isSupabaseConfigured && supabase) {
         try {
           const supaRes = await signUpWithSupabaseEmail(trimmedEmail, password, fullName.trim());
@@ -95,23 +95,16 @@ export const RegisterPage: React.FC = () => {
             return;
           }
         } catch (supaErr: any) {
-          const msg = supaErr?.message || '';
-          if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already exists')) {
-            setError(msg);
-            setLoading(false);
-            return;
-          }
-          console.warn('Supabase signup fallback note:', msg);
+          setError(supaErr?.message || 'Registration failed');
+          return;
         }
+      } else {
+        // Fallback only if Supabase is unconfigured
+        const registeredUser = await register(trimmedEmail, password, firstName, lastName, keyPair.publicKeyBase64);
+        navigate(`/verify-email?email=${encodeURIComponent(trimmedEmail)}`, {
+          state: { devOtp: (registeredUser as any)?.devOtp },
+        });
       }
-
-      // 3. Fallback to Spring Boot register API
-      const registeredUser = await register(trimmedEmail, password, firstName, lastName, keyPair.publicKeyBase64);
-
-      // 4. Navigate to OTP verification page (Screen 4)
-      navigate(`/verify-email?email=${encodeURIComponent(trimmedEmail)}`, {
-        state: { devOtp: (registeredUser as any)?.devOtp },
-      });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-const rawUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const rawUrl = (import.meta.env.VITE_SUPABASE_URL || 'https://khljiklngiyyzvolkzqf.supabase.co').trim();
 const supabaseUrl = rawUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
-const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_ASGCnYik7k2SN2y0qMwZkA_lrLRQD1B').trim();
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && 
@@ -77,6 +77,7 @@ export async function signUpWithSupabaseEmail(email: string, password: string, f
       data: {
         full_name: fullName,
       },
+      emailRedirectTo: `${window.location.origin}/login`,
     },
   });
 
