@@ -92,11 +92,11 @@ public class AuthService {
         User user;
         if (existingUserOpt.isPresent()) {
             User existing = existingUserOpt.get();
-            if (!existing.isDeletedFlag()) {
+            if (!existing.isDeletedFlag() && !"PENDING".equalsIgnoreCase(existing.getStatus())) {
                 auditLogService.logEvent(null, "REGISTER_ATTEMPT_DUPLICATE", "USER", email, "FAILURE", "Registration attempted with existing email", httpRequest);
-                throw new BadRequestException("An account with this email address already exists.");
+                throw new BadRequestException("An account with this email address already exists. Please log in instead.");
             }
-            // Existing account was soft-deleted: seamlessly restore and reactivate with new registration details
+            // Existing account was soft-deleted or unverified PENDING: update credentials and re-issue verification
             user = existing;
             user.setDeletedFlag(false);
             user.setStatus("PENDING");
