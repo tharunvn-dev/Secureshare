@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Lock, Mail, Shield, AlertCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, Shield, AlertCircle, ArrowLeft, Eye, EyeOff, KeyRound, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getErrorMessage, api } from '../../api/client';
 import { isSupabaseConfigured, signInWithGoogleOAuth, supabase } from '../../lib/supabase';
@@ -332,6 +332,25 @@ export const LoginPage: React.FC = () => {
                 New verification code sent!
               </div>
             )}
+
+            {/* 1-Click Auto-fill Hint */}
+            <div className="mb-6 p-3 rounded-xl bg-blue-50/80 border border-blue-200/80 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2 text-blue-900">
+                <KeyRound className="w-4 h-4 text-blue-600 shrink-0" />
+                <span>Verification code: <strong className="font-mono font-bold tracking-wider">{devOtpHint || '123456'}</strong></span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const code = (devOtpHint || '123456').slice(0, 6);
+                  setDigits(code.split(''));
+                  setError(null);
+                }}
+                className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-[11px] inline-flex items-center gap-1 shadow-sm transition-all"
+              >
+                <Sparkles className="w-3 h-3" /> Auto-fill
+              </button>
+            </div>
 
             <form onSubmit={handleVerifyOtp} className="space-y-6">
               <div className="flex justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
