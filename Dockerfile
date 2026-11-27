@@ -2,13 +2,17 @@
 FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
+# Configure Google mirror for Maven Central to avoid 429 rate-limiting on Render
+RUN mkdir -p /root/.m2
+COPY settings.xml /root/.m2/settings.xml
+
 # Copy POMs and backend source
 COPY pom.xml .
 COPY backend/pom.xml ./backend/
 COPY backend/src ./backend/src
 
 # Build backend module
-RUN mvn clean package -pl backend -am -DskipTests
+RUN mvn clean package -pl backend -am -DskipTests --batch-mode -s /root/.m2/settings.xml
 
 # Stage 2: Lightweight Java 21 JRE runtime image
 FROM eclipse-temurin:21-jre-alpine
