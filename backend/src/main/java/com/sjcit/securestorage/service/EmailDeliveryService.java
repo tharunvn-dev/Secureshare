@@ -60,7 +60,11 @@ public class EmailDeliveryService {
     public EmailOutbox queueEmail(String recipient, String subject, String bodyText, String bodyHtml) {
         EmailOutbox outbox = new EmailOutbox(recipient, subject, bodyText, bodyHtml);
         outbox = outboxRepository.saveAndFlush(outbox);
-        sendOutboxEmail(outbox.getId());
+        try {
+            sendOutboxEmail(outbox.getId());
+        } catch (Exception ex) {
+            log.warn("Immediate outbox delivery attempt failed: {}", ex.getMessage());
+        }
         return outbox;
     }
 
@@ -128,7 +132,10 @@ public class EmailDeliveryService {
                 outboxRepository.save(outbox);
                 log.info("Email delivered to {} successfully. Subject: {}", outbox.getRecipient(), outbox.getSubject());
             } else {
-                throw new RuntimeException("All delivery channels failed: " + failureReason);
+                log.warn("All delivery channels failed for {}: {}", outbox.getRecipient(), failureReason);
+                outbox.setStatus("FAILED");
+                outbox.setLastError(failureReason);
+                outboxRepository.save(outbox);
             }
         } catch (Exception e) {
             String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();

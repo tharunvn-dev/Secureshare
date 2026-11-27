@@ -68,8 +68,12 @@ public class OtpService {
         session.setVerified(false);
         otpRepository.save(session);
 
-        // 5. Send OTP via Email
-        emailService.sendOtpEmail(user.getEmail(), rawOtp, purpose);
+        // 5. Send OTP via Email (graceful handling: never roll back user creation if email relay fails)
+        try {
+            emailService.sendOtpEmail(user.getEmail(), rawOtp, purpose);
+        } catch (Exception ex) {
+            log.warn("Non-fatal: email delivery failed for {} [{}]: {}", user.getEmail(), purpose, ex.getMessage());
+        }
 
         log.info("SECURITY OTP generated for {} [{}]: {} (Dev master: 123456)", user.getEmail(), purpose, rawOtp);
 
