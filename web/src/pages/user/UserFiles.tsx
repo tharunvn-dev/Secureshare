@@ -56,6 +56,7 @@ export const UserFiles: React.FC = () => {
   const [sendEmailNotification, setSendEmailNotification] = useState(true);
   const [shareSubmitting, setShareSubmitting] = useState(false);
   const [shareSuccess, setShareSuccess] = useState<string | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
   const [generatedLinkToken, setGeneratedLinkToken] = useState<string | null>(null);
 
   // Delete State
@@ -146,6 +147,7 @@ export const UserFiles: React.FC = () => {
 
     setShareSubmitting(true);
     setShareSuccess(null);
+    setShareError(null);
     setGeneratedLinkToken(null);
     setCopiedLink(false);
 
@@ -170,6 +172,20 @@ export const UserFiles: React.FC = () => {
           const msg = getErrorMessage(shareErr);
           if (msg.toLowerCase().includes('already exists') || msg.toLowerCase().includes('active share')) {
             results.push(`Note: Active share with ${recipientEmail.trim()} already exists in portal.`);
+          } else if (
+            msg.includes('Key Mismatch') ||
+            msg.includes('AES-GCM authentication tag') ||
+            msg.includes('corrupted or tampered')
+          ) {
+            if (oneTimeLink) {
+              results.push(`Note: Direct share key mismatch on older upload. One-Time Download Link generated below:`);
+            } else {
+              setShareError(
+                `Key Mismatch: This file was uploaded with a previous cryptographic keypair. Under zero-knowledge security, you can share it using a One-Time Download Link, or re-upload the file with your active key.`
+              );
+              setOneTimeLink(true);
+              return;
+            }
           } else {
             throw shareErr;
           }
@@ -191,20 +207,12 @@ export const UserFiles: React.FC = () => {
         }
       }
 
-      setShareSuccess(results.join(' '));
+      if (results.length > 0) {
+        setShareSuccess(results.join(' '));
+      }
     } catch (err) {
       const rawMsg = getErrorMessage(err);
-      if (
-        rawMsg.includes('Key Mismatch') ||
-        rawMsg.includes('AES-GCM authentication tag') ||
-        rawMsg.includes('corrupted or tampered')
-      ) {
-        alert(
-          `Cryptographic Key Mismatch:\n\nThis file was uploaded with a previous cryptographic keypair. Under zero-knowledge security, only the private key that was active at the time of upload can unwrap it.\n\nFiles uploaded with your current key (or newly uploaded files) can be shared without issues.`
-        );
-      } else {
-        alert(`Share creation failed: ${rawMsg}`);
-      }
+      setShareError(rawMsg);
     } finally {
       setShareSubmitting(false);
     }
@@ -674,10 +682,12 @@ export const UserFiles: React.FC = () => {
 
             <form onSubmit={handleCreateShare} className="mt-4 space-y-4 text-xs">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Share with</label>
+                <label className="block text-slate-700 font-semibold mb-1">
+                  Share with {oneTimeLink && <span className="text-slate-400 font-normal">(optional for one-time links)</span>}
+                </label>
                 <input
                   type="email"
-                  required
+                  required={!oneTimeLink}
                   placeholder="name@example.com"
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
@@ -717,6 +727,27 @@ export const UserFiles: React.FC = () => {
                   <span>Generate one-time download link</span>
                 </label>
               </div>
+
+              {shareError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs space-y-2">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span>{shareError}</span>
+                  </div>
+                  {!oneTimeLink && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOneTimeLink(true);
+                        setShareError(null);
+                      }}
+                      className="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-xs transition-all shadow-sm"
+                    >
+                      Generate One-Time Link Instead &rarr;
+                    </button>
+                  )}
+                </div>
+              )}
 
               {shareSuccess && (
                 <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2">
