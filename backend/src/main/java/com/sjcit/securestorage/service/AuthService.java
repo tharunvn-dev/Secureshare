@@ -241,9 +241,22 @@ public class AuthService {
         GoogleIdToken.Payload payload = googleVerifierService.verifyToken(request.getIdToken());
         String email = payload.getEmail().toLowerCase().trim();
 
-        User user = userRepository.findByEmailIgnoreCaseAndDeletedFlagFalse(email).orElse(null);
+        Optional<User> existingOpt = userRepository.findByEmailIgnoreCase(email);
+        User user;
 
-        if (user == null) {
+        if (existingOpt.isPresent()) {
+            user = existingOpt.get();
+            if (user.isDeletedFlag()) {
+                user.setDeletedFlag(false);
+                user.setStatus("ACTIVE");
+                if (payload.get("given_name") != null) user.setFirstName((String) payload.get("given_name"));
+                if (payload.get("family_name") != null) user.setLastName((String) payload.get("family_name"));
+                user.setUpdatedAt(Instant.now());
+                user = userRepository.save(user);
+            } else if ("SUSPENDED".equalsIgnoreCase(user.getStatus())) {
+                throw new UnauthorizedException("Your account has been suspended.");
+            }
+        } else {
             // Register new user via Google
             user = new User();
             user.setEmail(email);
@@ -266,23 +279,33 @@ public class AuthService {
 
             user = userRepository.save(user);
             auditLogService.logEvent(user, "GOOGLE_REGISTER_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "Account registered via Google OpenID Connect", httpRequest);
-        } else {
-            if ("SUSPENDED".equalsIgnoreCase(user.getStatus())) {
-                throw new UnauthorizedException("Your account has been suspended.");
-            }
         }
 
         auditLogService.logEvent(user, "GOOGLE_LOGIN_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "Authenticated via Google OpenID Connect", httpRequest);
         return issueTokens(user, httpRequest);
     }
 
+    @Transactional
     public LoginResponse supabaseLogin(SupabaseAuthRequest request, HttpServletRequest httpRequest) {
         SupabaseTokenVerifierService.SupabaseUserClaims claims = supabaseVerifierService.verifyToken(request.getAccessToken());
         String email = claims.getEmail().toLowerCase().trim();
 
-        User user = userRepository.findByEmailIgnoreCaseAndDeletedFlagFalse(email).orElse(null);
+        Optional<User> existingOpt = userRepository.findByEmailIgnoreCase(email);
+        User user;
 
-        if (user == null) {
+        if (existingOpt.isPresent()) {
+            user = existingOpt.get();
+            if (user.isDeletedFlag()) {
+                user.setDeletedFlag(false);
+                user.setStatus("ACTIVE");
+                if (claims.getFirstName() != null) user.setFirstName(claims.getFirstName());
+                if (claims.getLastName() != null) user.setLastName(claims.getLastName());
+                user.setUpdatedAt(Instant.now());
+                user = userRepository.save(user);
+            } else if ("SUSPENDED".equalsIgnoreCase(user.getStatus())) {
+                throw new UnauthorizedException("Your account has been suspended.");
+            }
+        } else {
             user = new User();
             user.setEmail(email);
             user.setPasswordHash(passwordEncoder.encode(jwtTokenProvider.generateOpaqueRefreshToken()));
@@ -304,10 +327,6 @@ public class AuthService {
 
             user = userRepository.save(user);
             auditLogService.logEvent(user, "SUPABASE_REGISTER_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "Account registered via Supabase (" + claims.getProvider() + ")", httpRequest);
-        } else {
-            if ("SUSPENDED".equalsIgnoreCase(user.getStatus())) {
-                throw new UnauthorizedException("Your account has been suspended.");
-            }
         }
 
         auditLogService.logEvent(user, "SUPABASE_LOGIN_SUCCESS", "USER", user.getId().toString(), "SUCCESS", "Authenticated via Supabase (" + claims.getProvider() + ")", httpRequest);
