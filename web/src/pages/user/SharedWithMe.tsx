@@ -12,6 +12,7 @@ import {
   X,
   Search,
   Filter,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { api, getErrorMessage } from '../../api/client';
 import { FileShare, FileIntegrityResult } from '../../types';
@@ -273,17 +274,42 @@ export const SharedWithMe: React.FC = () => {
                       <td className="py-3.5 px-6 text-slate-500">{sharedDate}</td>
                       <td className="py-3.5 px-6 text-right relative">
                         <div className="flex items-center justify-end gap-1.5">
+                          {/* File Details */}
+                          <button
+                            onClick={() => {
+                              setInspectShare(share);
+                              setActiveMenuShareId(null);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="File Details & SHA-256 Checksum"
+                          >
+                            <Eye className="w-4 h-4 text-blue-600" />
+                          </button>
+
+                          {/* Quick Decrypt & Download */}
                           <button
                             onClick={() => handleDownload(share.fileId, filename, share.originalSize)}
                             disabled={downloadingShareId === share.fileId}
-                            className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
-                            title="Download & Decrypt"
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+                            title="Quick Decrypt & Download (uses active Keyring key)"
                           >
                             {downloadingShareId === share.fileId ? (
-                              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                              <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
                             ) : (
-                              <Download className="w-4 h-4" />
+                              <Download className="w-4 h-4 text-emerald-600" />
                             )}
+                          </button>
+
+                          {/* Stego Key / Interactive Decrypt Modal */}
+                          <button
+                            onClick={() => {
+                              setActiveMenuShareId(null);
+                              setDecryptModalShare({ id: share.fileId, filename, size: share.originalSize });
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Interactive Decryption Modal (Prompts for Key or Stego PNG Image)"
+                          >
+                            <ImageIcon className="w-4 h-4 text-cyan-600" />
                           </button>
 
                           <button
@@ -298,14 +324,24 @@ export const SharedWithMe: React.FC = () => {
                         {activeMenuShareId === share.id && (
                           <div
                             ref={menuRef}
-                            className="absolute right-6 top-10 w-44 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-30 text-xs font-medium text-slate-700"
+                            className="absolute right-6 top-10 w-48 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-30 text-xs font-medium text-slate-700"
                           >
                             <button
                               onClick={() => handleDownload(share.fileId, filename, share.originalSize)}
                               className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center gap-2"
                             >
-                              <Download className="w-3.5 h-3.5 text-blue-600" />
-                              <span>Download</span>
+                              <Download className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Quick Decrypt & Download</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setActiveMenuShareId(null);
+                                setDecryptModalShare({ id: share.fileId, filename, size: share.originalSize });
+                              }}
+                              className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-cyan-600"
+                            >
+                              <ImageIcon className="w-3.5 h-3.5" />
+                              <span>Decrypt with Key/Stego</span>
                             </button>
                             <button
                               onClick={() => {
@@ -314,8 +350,8 @@ export const SharedWithMe: React.FC = () => {
                               }}
                               className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center gap-2"
                             >
-                              <Eye className="w-3.5 h-3.5 text-slate-500" />
-                              <span>File Details</span>
+                              <Eye className="w-3.5 h-3.5 text-blue-600" />
+                              <span>File Details & Checksum</span>
                             </button>
                             <button
                               onClick={() => handleRunIntegrityCheck(share.fileId, filename)}
