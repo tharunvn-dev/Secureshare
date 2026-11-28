@@ -37,7 +37,7 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
 }) => {
   const { privateKey, setPrivateKey } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'STEGO' | 'SESSION'>('STEGO');
+  const [activeTab, setActiveTab] = useState<'STEGO' | 'SESSION'>(() => (privateKey ? 'SESSION' : 'STEGO'));
   const [stegoFile, setStegoFile] = useState<File | null>(null);
   const [extractedKey, setExtractedKey] = useState<string | null>(null);
   const [manualKey, setManualKey] = useState<string>(privateKey || '');
@@ -105,7 +105,7 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
   };
 
   const handleExecuteDecrypt = async () => {
-    const effectiveKey = activeTab === 'STEGO' ? extractedKey : manualKey;
+    const effectiveKey = activeTab === 'STEGO' ? (extractedKey || privateKey) : manualKey;
 
     if (!effectiveKey || !effectiveKey.trim()) {
       setDecryptError('An ECC Private Key is required. Please extract from a Stego Image or enter your key.');
@@ -287,6 +287,19 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
               </div>
             )}
 
+            {/* Stego Extraction Error Box */}
+            {extractError && (
+              <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs space-y-1.5 animate-in fade-in">
+                <div className="flex items-center gap-2 font-semibold text-rose-700">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{extractError}</span>
+                </div>
+                <p className="text-[11px] text-rose-600 pl-6 leading-relaxed">
+                  The uploaded image does not contain a concealed NIST P-256 key envelope. You can switch to the <strong>Session / Manual Key</strong> tab to decrypt with your keyring key.
+                </p>
+              </div>
+            )}
+
             {/* Quick Session Key Option */}
             {privateKey && !extractedKey && (
               <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs">
@@ -373,8 +386,8 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
           <button
             type="button"
             onClick={handleExecuteDecrypt}
-            disabled={decrypting || (activeTab === 'STEGO' ? !extractedKey : !manualKey.trim())}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-xs shadow-blue-500/20 flex items-center gap-2 disabled:opacity-50 transition-all"
+            disabled={decrypting || (activeTab === 'STEGO' ? (!extractedKey && !privateKey) : !manualKey.trim())}
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-xs shadow-blue-500/20 flex items-center gap-2 disabled:opacity-50 transition-all cursor-pointer"
           >
             {decrypting ? (
               <RefreshCw className="w-4 h-4 animate-spin" />

@@ -72,41 +72,9 @@ export const SharedWithMe: React.FC = () => {
     fetchShares();
   }, []);
 
-  const handleDownload = async (fileId: string, filename: string, size?: number) => {
+  const handleDownload = (fileId: string, filename: string, size?: number) => {
     setActiveMenuShareId(null);
-    if (!privateKey) {
-      setDecryptModalShare({ id: fileId, filename, size });
-      return;
-    }
-
-    setDownloadingShareId(fileId);
-    try {
-      let cleanKey = privateKey.trim();
-      if (cleanKey.includes('-----BEGIN')) {
-        cleanKey = cleanKey
-          .replace(/-----BEGIN[\s\S]*?-----/g, '')
-          .replace(/-----END[\s\S]*?-----/g, '')
-          .replace(/["']/g, '')
-          .replace(/\s+/g, '');
-      }
-      const response = await api.get(`/files/${fileId}/download`, {
-        responseType: 'blob',
-        headers: { 'X-Private-Key': cleanKey },
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err: any) {
-      // Fallback to Stego Key Decrypt Modal if session key fails
-      setDecryptModalShare({ id: fileId, filename, size });
-    } finally {
-      setDownloadingShareId(null);
-    }
+    setDecryptModalShare({ id: fileId, filename, size });
   };
 
   const handleRunIntegrityCheck = async (fileId: string, filename: string) => {
