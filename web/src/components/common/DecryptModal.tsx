@@ -106,10 +106,14 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
   };
 
   const handleExecuteDecrypt = async () => {
-    const effectiveKey = activeTab === 'STEGO' ? (extractedKey || privateKey) : privateKey;
+    const effectiveKey = activeTab === 'STEGO' ? extractedKey : privateKey;
 
     if (!effectiveKey || !effectiveKey.trim()) {
-      setDecryptError('An active ECC Private Key is required. Please extract from a Stego Image or verify your Keyring.');
+      if (activeTab === 'STEGO') {
+        setDecryptError('Please upload a valid Stego Key Image (.png) with a concealed key before decrypting.');
+      } else {
+        setDecryptError('An active ECC Private Key is required in Keyring to decrypt.');
+      }
       return;
     }
 
@@ -380,8 +384,8 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
           <button
             type="button"
             onClick={handleExecuteDecrypt}
-            disabled={decrypting || (activeTab === 'STEGO' ? (!extractedKey && !privateKey) : !privateKey)}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-xs shadow-blue-500/20 flex items-center gap-2 disabled:opacity-50 transition-all cursor-pointer"
+            disabled={decrypting || extracting || (activeTab === 'STEGO' ? !extractedKey : !privateKey)}
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-xs shadow-blue-500/20 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
           >
             {decrypting ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
