@@ -11,6 +11,7 @@ import {
   RefreshCw,
   FileText,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { api, getErrorMessage } from '../../api/client';
 import { extractKeyFromStegoImage } from '../../utils/steganography';
 
@@ -33,6 +34,8 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
   sha256Checksum,
   onSuccess,
 }) => {
+  const { privateKey } = useAuth();
+
   const [activeTab, setActiveTab] = useState<'STEGO' | 'SESSION'>('STEGO');
   const [stegoFile, setStegoFile] = useState<File | null>(null);
   const [extractedKey, setExtractedKey] = useState<string | null>(null);
@@ -46,6 +49,7 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
 
   const handleStegoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (e.target) e.target.value = '';
     if (!file) return;
 
     if (!file.name.toLowerCase().endsWith('.png')) {
@@ -275,14 +279,30 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
 
             {/* Stego Extraction Error Box */}
             {extractError && (
-              <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs space-y-1.5 animate-in fade-in">
+              <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs space-y-2 animate-in fade-in">
                 <div className="flex items-center gap-2 font-semibold text-rose-700">
                   <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                   <span>{extractError}</span>
                 </div>
                 <p className="text-[11px] text-rose-600 pl-6 leading-relaxed">
-                  The uploaded image does not contain a concealed NIST P-256 key envelope. You can switch to the <strong>Enter Private Key Manually</strong> tab to paste your key.
+                  The uploaded image does not contain a concealed NIST P-256 key envelope. Make sure you are using a genuine Stego PNG generated from the Keyring menu (<strong>Keyring &rarr; Stego Key Image</strong>).
                 </p>
+                {privateKey && (
+                  <div className="pl-6 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('SESSION');
+                        setManualKey(privateKey);
+                        setExtractError(null);
+                      }}
+                      className="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Key className="w-3.5 h-3.5" />
+                      Switch to Manual Key &amp; Insert Keyring Key
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -297,9 +317,21 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Base64 PKCS#8 ECC Private Key:
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Base64 PKCS#8 ECC Private Key:
+                </label>
+                {privateKey && (
+                  <button
+                    type="button"
+                    onClick={() => setManualKey(privateKey)}
+                    className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Key className="w-3 h-3" />
+                    Insert Key from Keyring
+                  </button>
+                )}
+              </div>
               <textarea
                 rows={4}
                 placeholder="Paste your Base64 PKCS#8 ECC private key here..."
@@ -362,11 +394,10 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
               type="button"
               onClick={handleExecuteDecrypt}
               disabled={decrypting || (activeTab === 'STEGO' ? !extractedKey : !manualKey.trim())}
-              className={`px-5 py-2 font-semibold text-xs rounded-xl flex items-center gap-2 transition-all ${
-                decrypting || (activeTab === 'STEGO' ? !extractedKey : !manualKey.trim())
-                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none border border-slate-200'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs shadow-blue-500/20 cursor-pointer'
-              }`}
+              className={`px-5 py-2 font-semibold text-xs rounded-xl flex items-center gap-2 transition-all ${decrypting || (activeTab === 'STEGO' ? !extractedKey : !manualKey.trim())
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none border border-slate-200'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs shadow-blue-500/20 cursor-pointer'
+                }`}
               title={
                 activeTab === 'STEGO' && !extractedKey
                   ? 'Upload a valid Stego Key Image (.png) first'

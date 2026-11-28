@@ -230,7 +230,7 @@ export async function extractKeyFromStegoImage(imageFile: File | Blob): Promise<
   const canvas = document.createElement('canvas');
   canvas.width = img.width;
   canvas.height = img.height;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) throw new Error('Could not get 2D canvas context');
 
   ctx.drawImage(img, 0, 0);
@@ -250,14 +250,19 @@ export async function extractKeyFromStegoImage(imageFile: File | Blob): Promise<
     }
   }
 
-  // Validate MAGIC bytes: 'S', 'E', 'C', 'K'
-  if (
-    headerBytes[0] !== MAGIC[0] ||
-    headerBytes[1] !== MAGIC[1] ||
-    headerBytes[2] !== MAGIC[2] ||
-    headerBytes[3] !== MAGIC[3]
-  ) {
-    throw new Error('No concealed key envelope found. Image lacks the "SECK" steganographic identifier.');
+  // Validate MAGIC bytes: 'S', 'E', 'C', 'K' (case-insensitive for SECK / SECk / seck resilience)
+  const b0 = headerBytes[0];
+  const b1 = headerBytes[1];
+  const b2 = headerBytes[2];
+  const b3 = headerBytes[3];
+  const isMagicValid =
+    (b0 === 0x53 || b0 === 0x73) &&
+    (b1 === 0x45 || b1 === 0x65) &&
+    (b2 === 0x43 || b2 === 0x63) &&
+    (b3 === 0x4B || b3 === 0x6B);
+
+  if (!isMagicValid) {
+    throw new Error('No concealed key envelope found. This image lacks the "SECK" steganographic identifier.');
   }
 
   // Validate VERSION

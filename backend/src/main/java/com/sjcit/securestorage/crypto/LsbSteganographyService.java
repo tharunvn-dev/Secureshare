@@ -168,8 +168,15 @@ public class LsbSteganographyService {
         byte[] magicRead = new byte[4];
         headerBuf.get(magicRead);
 
-        if (magicRead[0] != MAGIC[0] || magicRead[1] != MAGIC[1] ||
-            magicRead[2] != MAGIC[2] || magicRead[3] != MAGIC[3]) {
+        byte b0 = magicRead[0];
+        byte b1 = magicRead[1];
+        byte b2 = magicRead[2];
+        byte b3 = magicRead[3];
+        boolean validMagic = (b0 == 0x53 || b0 == 0x73) &&
+                             (b1 == 0x45 || b1 == 0x65) &&
+                             (b2 == 0x43 || b2 == 0x63) &&
+                             (b3 == 0x4B || b3 == 0x6B);
+        if (!validMagic) {
             throw new CryptoException("Invalid steganographic magic identifier. No concealed key envelope found in carrier.");
         }
 
