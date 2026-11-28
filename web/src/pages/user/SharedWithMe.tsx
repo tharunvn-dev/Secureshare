@@ -254,18 +254,30 @@ export const SharedWithMe: React.FC = () => {
                             <Eye className="w-4 h-4 text-blue-600" />
                           </button>
 
-                          {/* Steganographic Decrypt & Download */}
+                          {/* Quick Decrypt & Download */}
                           <button
                             onClick={() => handleDownload(share.fileId, filename, share.originalSize)}
                             disabled={downloadingShareId === share.fileId}
                             className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
-                            title="Steganographic Decrypt & Download (Upload Stego Image)"
+                            title="Quick Decrypt & Download (uses active Keyring key)"
                           >
                             {downloadingShareId === share.fileId ? (
                               <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
                             ) : (
                               <Download className="w-4 h-4 text-emerald-600" />
                             )}
+                          </button>
+
+                          {/* Stego Key / Interactive Decrypt Modal */}
+                          <button
+                            onClick={() => {
+                              setActiveMenuShareId(null);
+                              setDecryptModalShare({ id: share.fileId, filename, size: share.originalSize });
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Interactive Decryption Modal (Prompts for Key or Stego PNG Image)"
+                          >
+                            <ImageIcon className="w-4 h-4 text-cyan-600" />
                           </button>
 
                           <button
@@ -287,7 +299,17 @@ export const SharedWithMe: React.FC = () => {
                               className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center gap-2"
                             >
                               <Download className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>Decrypt & Download (Stego PNG)</span>
+                              <span>Quick Decrypt & Download</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setActiveMenuShareId(null);
+                                setDecryptModalShare({ id: share.fileId, filename, size: share.originalSize });
+                              }}
+                              className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-cyan-600"
+                            >
+                              <ImageIcon className="w-3.5 h-3.5" />
+                              <span>Decrypt with Key/Stego</span>
                             </button>
                             <button
                               onClick={() => {

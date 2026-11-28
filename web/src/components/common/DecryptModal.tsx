@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import {
   ShieldCheck,
+  Key,
+  Image as ImageIcon,
   Download,
   X,
   CheckCircle2,
@@ -8,7 +10,9 @@ import {
   Upload,
   RefreshCw,
   FileText,
+  Lock,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { api, getErrorMessage } from '../../api/client';
 import { extractKeyFromStegoImage } from '../../utils/steganography';
 
@@ -31,10 +35,15 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
   sha256Checksum,
   onSuccess,
 }) => {
+  const { privateKey, setPrivateKey } = useAuth();
+
+  const [activeTab, setActiveTab] = useState<'STEGO' | 'SESSION'>(() => (privateKey ? 'SESSION' : 'STEGO'));
   const [stegoFile, setStegoFile] = useState<File | null>(null);
   const [extractedKey, setExtractedKey] = useState<string | null>(null);
+  const [manualKey, setManualKey] = useState<string>(privateKey || '');
   const [extracting, setExtracting] = useState<boolean>(false);
   const [extractError, setExtractError] = useState<string | null>(null);
+  const [saveToSession, setSaveToSession] = useState<boolean>(true);
   const [decrypting, setDecrypting] = useState<boolean>(false);
   const [decryptError, setDecryptError] = useState<string | null>(null);
 
@@ -56,6 +65,9 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
     try {
       const key = await extractKeyFromStegoImage(file);
       setExtractedKey(key);
+      if (saveToSession) {
+        setPrivateKey(key);
+      }
     } catch (err: any) {
       setExtractError(err.message || 'Failed to extract key from stego carrier image.');
       setExtractedKey(null);
@@ -81,6 +93,9 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
     try {
       const key = await extractKeyFromStegoImage(file);
       setExtractedKey(key);
+      if (saveToSession) {
+        setPrivateKey(key);
+      }
     } catch (err: any) {
       setExtractError(err.message || 'Failed to extract key from stego carrier image.');
       setExtractedKey(null);
@@ -90,12 +105,18 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
   };
 
   const handleExecuteDecrypt = async () => {
-    if (!extractedKey || !extractedKey.trim()) {
-      setDecryptError('Please upload a valid Stego Key Image (.png) with a concealed key before decrypting.');
+    const effectiveKey = activeTab === 'STEGO' ? extractedKey : manualKey;
+
+    if (!effectiveKey || !effectiveKey.trim()) {
+      if (activeTab === 'STEGO') {
+        setDecryptError('Please upload a valid Stego Key Image (.png) to extract your private key, or switch to the Session Key tab.');
+      } else {
+        setDecryptError('An ECC Private Key is required. Please paste your key or use a Stego Image.');
+      }
       return;
     }
 
-    let cleanKey = extractedKey.trim();
+    let cleanKey = effectiveKey.trim();
     if (cleanKey.includes('-----BEGIN')) {
       cleanKey = cleanKey
         .replace(/-----BEGIN[\s\S]*?-----/g, '')
@@ -108,6 +129,10 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
     setDecryptError(null);
 
     try {
+      if (saveToSession) {
+        setPrivateKey(cleanKey);
+      }
+
       const response = await api.get(`/files/${fileId}/download`, {
         responseType: 'blob',
         headers: { 'X-Private-Key': cleanKey },
@@ -125,7 +150,7 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
       if (onSuccess) onSuccess();
       onClose();
     } catch (err: any) {
-      let msg = 'Failed to decrypt file. Verify your Stego key image matches this file.';
+      let msg = 'Failed to decrypt file. Verify your ECC private key matches this file.';
       if (err.response?.data instanceof Blob) {
         try {
           const text = await err.response.data.text();
@@ -155,7 +180,7 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
                 Steganographic Decryption &amp; Download
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Upload your Stego PNG image to extract Layer 4 Private Key and reverse 5-Layer Hybrid Encryption
+                Extract Layer 4 Private Key from PNG Carrier to reverse 5-Layer Hybrid Encryption
               </p>
             </div>
           </div>
@@ -182,73 +207,168 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
           </span>
         </div>
 
-        {/* Stego Image Drag & Drop Area */}
-        <div className="mt-4 space-y-3">
-          <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={handleDrop}
-            className={`p-7 border-2 border-dashed rounded-xl text-center transition-all ${
-              extractedKey
-                ? 'border-emerald-500 bg-emerald-50/50'
-                : 'border-slate-200 hover:border-blue-500 bg-slate-50'
+        {/* Tab Selection */}
+        <div className="flex p-1 bg-slate-100 rounded-xl text-xs font-semibold mt-4">
+          <button
+            type="button"
+            onClick={() => setActiveTab('STEGO')}
+            className={`flex-1 py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              activeTab === 'STEGO'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <input
-              type="file"
-              id="stego-input"
-              accept=".png"
-              onChange={handleStegoFileChange}
-              className="hidden"
-            />
-            <label htmlFor="stego-input" className="cursor-pointer flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-3 shadow-xs">
-                {extracting ? (
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                ) : extractedKey ? (
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                ) : (
-                  <Upload className="w-5 h-5" />
-                )}
+            <ImageIcon className="w-3.5 h-3.5" />
+            Extract from Stego Image (Recommended)
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('SESSION')}
+            className={`flex-1 py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              activeTab === 'SESSION'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Key className="w-3.5 h-3.5" />
+            Session / Manual Key
+          </button>
+        </div>
+
+        {/* Tab 1: Stego Image Drag & Drop */}
+        {activeTab === 'STEGO' && (
+          <div className="mt-4 space-y-3">
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop}
+              className={`p-6 border-2 border-dashed rounded-xl text-center transition-all ${
+                extractedKey
+                  ? 'border-emerald-500 bg-emerald-50/50'
+                  : 'border-slate-200 hover:border-blue-500 bg-slate-50'
+              }`}
+            >
+              <input
+                type="file"
+                id="stego-input"
+                accept=".png"
+                onChange={handleStegoFileChange}
+                className="hidden"
+              />
+              <label htmlFor="stego-input" className="cursor-pointer flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-3 shadow-xs">
+                  {extracting ? (
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                  ) : extractedKey ? (
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                  ) : (
+                    <Upload className="w-5 h-5" />
+                  )}
+                </div>
+                <span className="text-xs font-semibold text-slate-900">
+                  {stegoFile ? stegoFile.name : 'Choose or Drag & Drop Stego Key Image (.png)'}
+                </span>
+                <span className="text-[11px] text-slate-500 mt-1">
+                  Extracts NIST P-256 ECC Private Key from Least Significant Bits (LSB)
+                </span>
+              </label>
+            </div>
+
+            {/* Extracted Key Status Box */}
+            {extractedKey && (
+              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1 animate-in fade-in">
+                <div className="flex items-center justify-between text-xs font-semibold text-emerald-800">
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    Key Successfully Extracted &amp; Verified (CRC-32 Valid)
+                  </span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    NIST P-256
+                  </span>
+                </div>
+                <div className="text-[10px] font-mono text-slate-500 break-all select-all pt-1">
+                  {extractedKey.substring(0, 36)}••••••••••••••••••••••••••••••••••••
+                </div>
               </div>
-              <span className="text-xs font-semibold text-slate-900">
-                {stegoFile ? stegoFile.name : 'Choose or Drag & Drop Stego Key Image (.png)'}
-              </span>
-              <span className="text-[11px] text-slate-500 mt-1">
-                Extracts NIST P-256 ECC Private Key from Least Significant Bits (LSB)
-              </span>
-            </label>
+            )}
+
+            {/* Stego Extraction Error Box */}
+            {extractError && (
+              <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs space-y-1.5 animate-in fade-in">
+                <div className="flex items-center gap-2 font-semibold text-rose-700">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{extractError}</span>
+                </div>
+                <p className="text-[11px] text-rose-600 pl-6 leading-relaxed">
+                  The uploaded image does not contain a concealed NIST P-256 key envelope. You can switch to the <strong>Session / Manual Key</strong> tab to decrypt with your keyring key.
+                </p>
+              </div>
+            )}
+
+            {/* Quick Session Key Option */}
+            {privateKey && !extractedKey && (
+              <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                <div className="flex items-center gap-2 text-slate-600">
+                  <Key className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span>Keyring session key available:</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('SESSION')}
+                  className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold transition-colors"
+                >
+                  Switch to Session Key
+                </button>
+              </div>
+            )}
           </div>
+        )}
 
-          {/* Extracted Key Status Box */}
-          {extractedKey && (
-            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1 animate-in fade-in">
-              <div className="flex items-center justify-between text-xs font-semibold text-emerald-800">
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  Key Successfully Extracted &amp; Verified (CRC-32 Valid)
-                </span>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                  NIST P-256
+        {/* Tab 2: Session Key / Manual Input */}
+        {activeTab === 'SESSION' && (
+          <div className="mt-4 space-y-3">
+            {privateKey ? (
+              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <Key className="w-4 h-4 text-emerald-600" />
+                  <span className="text-emerald-900 font-semibold">Active Session Key Found</span>
+                </div>
+                <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                  Ready to Decrypt
                 </span>
               </div>
-              <div className="text-[10px] font-mono text-slate-500 break-all select-all pt-1">
-                {extractedKey.substring(0, 36)}••••••••••••••••••••••••••••••••••••
+            ) : (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>No private key found in current session. Paste your key below or use a Stego Image.</span>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Stego Extraction Error Box */}
-          {extractError && (
-            <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs space-y-1.5 animate-in fade-in">
-              <div className="flex items-center gap-2 font-semibold text-rose-700">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                <span>{extractError}</span>
-              </div>
-              <p className="text-[11px] text-rose-600 pl-6 leading-relaxed">
-                The uploaded image does not contain a concealed NIST P-256 key envelope. Please upload the genuine Stego Key Image (.png) created for this file.
-              </p>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Base64 PKCS#8 ECC Private Key:
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Paste your Base64 PKCS#8 ECC private key here..."
+                value={manualKey}
+                onChange={(e) => setManualKey(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
+              />
             </div>
-          )}
+          </div>
+        )}
+
+        {/* Remember in Session Checkbox */}
+        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+          <label className="flex items-center gap-2 cursor-pointer text-slate-600">
+            <input
+              type="checkbox"
+              checked={saveToSession}
+              onChange={(e) => setSaveToSession(e.target.checked)}
+              className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-0"
+            />
+            <span>Remember this key in browser session for future downloads</span>
+          </label>
         </div>
 
         {decryptError && (
@@ -259,27 +379,59 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
         )}
 
         {/* Action Buttons */}
-        <div className="mt-5 flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleExecuteDecrypt}
-            disabled={decrypting || extracting || !extractedKey}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-xs shadow-blue-500/20 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
-          >
-            {decrypting ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4" />
+        <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
+          <div className="text-[11px] text-slate-500">
+            {activeTab === 'STEGO' && !extractedKey && (
+              <span className="flex items-center gap-1.5 text-amber-600 font-medium">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                Upload a Stego Key Image (.png) to unlock download
+              </span>
             )}
-            {decrypting ? 'Decrypting 5 Layers...' : 'Decrypt & Download'}
-          </button>
+            {activeTab === 'STEGO' && extractedKey && (
+              <span className="flex items-center gap-1.5 text-emerald-600 font-medium">
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                Stego key extracted & verified
+              </span>
+            )}
+            {activeTab === 'SESSION' && (
+              <span className="flex items-center gap-1.5 text-slate-600">
+                <Key className="w-3.5 h-3.5 shrink-0 text-blue-600" />
+                {manualKey.trim() ? 'Using private key for decryption' : 'Paste an ECC private key'}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleExecuteDecrypt}
+              disabled={decrypting || (activeTab === 'STEGO' ? !extractedKey : !manualKey.trim())}
+              className={`px-5 py-2 font-semibold text-xs rounded-xl flex items-center gap-2 transition-all ${
+                decrypting || (activeTab === 'STEGO' ? !extractedKey : !manualKey.trim())
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none border border-slate-200'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs shadow-blue-500/20 cursor-pointer'
+              }`}
+              title={
+                activeTab === 'STEGO' && !extractedKey
+                  ? 'Upload a valid Stego Key Image (.png) first'
+                  : 'Decrypt and download file'
+              }
+            >
+              {decrypting ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              {decrypting ? 'Decrypting 5 Layers...' : 'Decrypt & Download'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
