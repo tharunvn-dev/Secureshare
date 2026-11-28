@@ -42,14 +42,11 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
   const [activeTab, setActiveTab] = useState<'STEGO' | 'SESSION'>(() => (privateKey ? 'SESSION' : 'STEGO'));
   const [stegoFile, setStegoFile] = useState<File | null>(null);
   const [extractedKey, setExtractedKey] = useState<string | null>(null);
-  const [manualKey, setManualKey] = useState<string>(privateKey || '');
   const [extracting, setExtracting] = useState<boolean>(false);
   const [extractError, setExtractError] = useState<string | null>(null);
   const [saveToSession, setSaveToSession] = useState<boolean>(true);
   const [decrypting, setDecrypting] = useState<boolean>(false);
   const [decryptError, setDecryptError] = useState<string | null>(null);
-  const [showKey, setShowKey] = useState<boolean>(false);
-  const [showCustomKeyInput, setShowCustomKeyInput] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
@@ -109,10 +106,10 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
   };
 
   const handleExecuteDecrypt = async () => {
-    const effectiveKey = activeTab === 'STEGO' ? (extractedKey || privateKey) : manualKey;
+    const effectiveKey = activeTab === 'STEGO' ? (extractedKey || privateKey) : privateKey;
 
     if (!effectiveKey || !effectiveKey.trim()) {
-      setDecryptError('An ECC Private Key is required. Please extract from a Stego Image or enter your key.');
+      setDecryptError('An active ECC Private Key is required. Please extract from a Stego Image or verify your Keyring.');
       return;
     }
 
@@ -231,7 +228,7 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
             }`}
           >
             <Key className="w-3.5 h-3.5" />
-            Session / Manual Key
+            Session Keyring
           </button>
         </div>
 
@@ -316,18 +313,18 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
                   onClick={() => setActiveTab('SESSION')}
                   className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold transition-colors"
                 >
-                  Switch to Session Key
+                  Switch to Session Keyring
                 </button>
               </div>
             )}
           </div>
         )}
 
-        {/* Tab 2: Session Key / Manual Input */}
+        {/* Tab 2: Session Keyring */}
         {activeTab === 'SESSION' && (
           <div className="mt-4 space-y-3">
             {privateKey ? (
-              <div className="p-4 bg-emerald-50/80 border border-emerald-200/90 rounded-xl space-y-2.5">
+              <div className="p-4 bg-emerald-50/80 border border-emerald-200/90 rounded-xl space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-600" />
@@ -338,53 +335,14 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-emerald-200/60 font-mono text-xs text-slate-700">
-                  <span className="truncate mr-2 select-none">
-                    {showKey ? manualKey : '••••••••••••••••••••••••••••••••••••••••••••••••'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setShowKey(!showKey)}
-                    className="text-xs text-blue-600 hover:text-blue-800 font-sans font-medium flex items-center gap-1 shrink-0 cursor-pointer"
-                  >
-                    {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    <span>{showKey ? 'Hide' : 'Reveal'}</span>
-                  </button>
-                </div>
-
-                <p className="text-[11px] text-slate-500">
-                  Your cryptographic private key is loaded safely in memory and will be used to unwrap and reverse the 5-layer encryption.
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Your cryptographic private key is loaded safely in client memory. Click <strong>Decrypt &amp; Download</strong> below to reverse the 5-layer encryption and download your file.
                 </p>
-
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowCustomKeyInput(!showCustomKeyInput)}
-                    className="text-[11px] text-slate-500 hover:text-slate-800 underline transition-colors cursor-pointer"
-                  >
-                    {showCustomKeyInput ? 'Hide manual key editor' : 'Need to paste a different key? Edit manually'}
-                  </button>
-                </div>
               </div>
             ) : (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-center gap-2">
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>No private key found in current session. Paste your key below or use a Stego Image.</span>
-              </div>
-            )}
-
-            {(!privateKey || showCustomKeyInput) && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Base64 PKCS#8 ECC Private Key:
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Paste your Base64 PKCS#8 ECC private key here..."
-                  value={manualKey}
-                  onChange={(e) => setManualKey(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
-                />
+                <span>No active private key found in current session. Please switch to "Extract from Stego Image" or log in again.</span>
               </div>
             )}
           </div>
@@ -422,7 +380,7 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
           <button
             type="button"
             onClick={handleExecuteDecrypt}
-            disabled={decrypting || (activeTab === 'STEGO' ? (!extractedKey && !privateKey) : !manualKey.trim())}
+            disabled={decrypting || (activeTab === 'STEGO' ? (!extractedKey && !privateKey) : !privateKey)}
             className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-xs shadow-blue-500/20 flex items-center gap-2 disabled:opacity-50 transition-all cursor-pointer"
           >
             {decrypting ? (
