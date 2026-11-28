@@ -50,6 +50,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public authentication and recovery endpoints
                 .requestMatchers("/api/auth/**").permitAll()
+                // Steganographic key extraction (lossless PNG extraction helper)
+                .requestMatchers("/api/files/stego/extract").permitAll()
                 // Shared public link consumption
                 .requestMatchers("/api/shares/link/**").permitAll()
                 // OpenAPI / Swagger Documentation

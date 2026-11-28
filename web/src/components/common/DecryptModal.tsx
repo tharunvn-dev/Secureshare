@@ -402,8 +402,8 @@ export const DecryptModal: React.FC<DecryptModalProps> = ({
                 activeTab === 'STEGO' && !extractedKey
                   ? 'Upload a valid Stego Key Image (.png) first'
                   : activeTab === 'SESSION' && !manualKey.trim()
-                  ? 'Paste an ECC private key first'
-                  : 'Decrypt and download file'
+                    ? 'Paste an ECC private key first'
+                    : 'Decrypt and download file'
               }
             >
               {decrypting ? (

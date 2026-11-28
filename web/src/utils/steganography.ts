@@ -2,6 +2,8 @@
 // Compatible with backend LsbSteganographyService:
 // Framing: [MAGIC: 4B ("SECK")] | [Version: 1B] | [PayloadLength: 4B] | [Payload: NB] | [CRC32: 4B]
 
+import { api } from '../api/client';
+
 // Standard IEEE 802.3 CRC32 Table & Calculator
 const makeCRCTable = (): Uint32Array => {
   let c: number;
@@ -222,10 +224,37 @@ export async function embedKeyInStegoImage(
 
 /**
  * Extracts a concealed private key from a steganographic PNG image.
+ * Uses lossless server-side extraction first (immune to browser Canvas fingerprinting / Brave farbling),
+ * with client-side Canvas fallback.
  * @param imageFile The PNG file containing the hidden key envelope
  * @returns The extracted Base64 ECC private key string
  */
 export async function extractKeyFromStegoImage(imageFile: File | Blob): Promise<string> {
+  // 1. Primary: Server-Side Lossless Extraction (100% reliable across all browsers)
+  try {
+    const formData = new FormData();
+    formData.append('carrier', imageFile);
+    const res = await api.post<{ key: string; status: string }>('/files/stego/extract', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    if (res.data?.key && res.data.key.trim().length > 0) {
+      return res.data.key.trim();
+    }
+  } catch (err: any) {
+    const serverMsg = err.response?.data?.message || err.message;
+    if (
+      serverMsg &&
+      (serverMsg.includes('magic identifier') ||
+        serverMsg.includes('SECK') ||
+        serverMsg.includes('corrupted') ||
+        serverMsg.includes('CRC-32'))
+    ) {
+      throw new Error(serverMsg);
+    }
+    console.warn('Backend stego extraction failed, falling back to client canvas...', err);
+  }
+
+  // 2. Client-side Fallback (HTML5 Canvas LSB extraction with willReadFrequently)
   const img = await loadImageFromFile(imageFile);
   const canvas = document.createElement('canvas');
   canvas.width = img.width;

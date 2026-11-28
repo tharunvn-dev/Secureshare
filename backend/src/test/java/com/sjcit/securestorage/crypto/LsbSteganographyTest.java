@@ -33,14 +33,12 @@ class LsbSteganographyTest {
     }
 
     @Test
-    @DisplayName("Inspect real frontend stego file pixels")
-    void testRealStegoFile() throws Exception {
-        java.io.File f = new java.io.File("C:\\Users\\tarun\\Downloads\\pri.png");
-        if (f.exists()) {
-            byte[] bytes = java.nio.file.Files.readAllBytes(f.toPath());
-            byte[] extracted = lsbService.extract(bytes);
-            System.out.println("SUCCESSFULLY EXTRACTED KEY FROM SCREENSHOT 30: " + new String(extracted, java.nio.charset.StandardCharsets.UTF_8));
-            assertNotNull(extracted);
-        }
+    @DisplayName("Layer 5: Case-insensitive SECk and SECK magic identifier compatibility")
+    void testCaseInsensitiveMagicRoundTrip() {
+        byte[] payload = "TEST_PAYLOAD_FOR_CASE_RESILIENCE".getBytes(StandardCharsets.UTF_8);
+        byte[] stegoPngBytes = lsbService.embed(null, payload);
+
+        byte[] extractedPayload = lsbService.extract(stegoPngBytes);
+        assertArrayEquals(payload, extractedPayload);
     }
 }

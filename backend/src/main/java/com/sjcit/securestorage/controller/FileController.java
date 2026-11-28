@@ -1,9 +1,12 @@
 package com.sjcit.securestorage.controller;
 
+import com.sjcit.securestorage.crypto.LsbSteganographyService;
 import com.sjcit.securestorage.dto.FileIntegrityResponse;
 import com.sjcit.securestorage.dto.FileMetadataResponse;
 import com.sjcit.securestorage.dto.FileUploadResponse;
 import com.sjcit.securestorage.entity.User;
+import com.sjcit.securestorage.exception.BadRequestException;
+import com.sjcit.securestorage.exception.CryptoException;
 import com.sjcit.securestorage.service.FileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,9 +33,29 @@ import java.util.UUID;
 public class FileController {
 
     private final FileService fileService;
+    private final LsbSteganographyService lsbSteganographyService;
 
-    public FileController(FileService fileService) {
+    public FileController(FileService fileService, LsbSteganographyService lsbSteganographyService) {
         this.fileService = fileService;
+        this.lsbSteganographyService = lsbSteganographyService;
+    }
+
+    @PostMapping(value = "/stego/extract", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Losslessly extract concealed ECC private key from a steganographic carrier PNG")
+    public ResponseEntity<Map<String, String>> extractStegoKey(@RequestParam("carrier") MultipartFile carrierFile) {
+        if (carrierFile == null || carrierFile.isEmpty()) {
+            throw new BadRequestException("Stego carrier image file is required.");
+        }
+        try {
+            byte[] carrierBytes = carrierFile.getBytes();
+            byte[] extractedPayload = lsbSteganographyService.extract(carrierBytes);
+            String privateKey = new String(extractedPayload, java.nio.charset.StandardCharsets.UTF_8).trim();
+            return ResponseEntity.ok(Map.of("key", privateKey, "status", "SUCCESS"));
+        } catch (CryptoException ce) {
+            throw new BadRequestException(ce.getMessage());
+        } catch (Exception e) {
+            throw new BadRequestException("Failed to extract key from stego carrier: " + e.getMessage());
+        }
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
