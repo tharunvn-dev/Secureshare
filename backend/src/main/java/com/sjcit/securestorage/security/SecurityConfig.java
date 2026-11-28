@@ -59,7 +59,7 @@ public class SecurityConfig {
                 // Explicit Administrator Boundary
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // User & Shared API Operations
-                .requestMatchers("/api/files/**", "/api/shares/**", "/api/notifications/**").authenticated()
+                .requestMatchers("/api/users/**", "/api/files/**", "/api/shares/**", "/api/notifications/**").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
